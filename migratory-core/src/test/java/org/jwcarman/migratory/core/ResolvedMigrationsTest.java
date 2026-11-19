@@ -16,6 +16,7 @@
 package org.jwcarman.migratory.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
 import java.io.ByteArrayInputStream;
@@ -64,6 +65,25 @@ class ResolvedMigrationsTest {
                 "classpath:org/jwcarman/roux/db/roux-changelog.xml",
                 "jar:file:/libs/roux.jar!/META-INF/migratory.properties"));
     assertThat(read.get(1).after()).isEmpty();
+  }
+
+  @Test
+  void damagedCountFails() {
+    assertThatThrownBy(() -> read("count=x\n"))
+        .isInstanceOf(MigratoryException.class)
+        .hasMessageContaining(ResolvedMigrations.LOCATION);
+  }
+
+  @Test
+  void missingEntryFails() {
+    assertThatThrownBy(() -> read("count=1\n0.changelog=classpath:a/c.xml\n"))
+        .isInstanceOf(MigratoryException.class)
+        .hasMessageContaining(ResolvedMigrations.LOCATION);
+  }
+
+  private static List<Migration> read(String text) {
+    return ResolvedMigrations.read(
+        new ByteArrayInputStream(text.getBytes(StandardCharsets.ISO_8859_1)));
   }
 
   @Test

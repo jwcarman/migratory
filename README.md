@@ -58,8 +58,10 @@ optional one when it is installed. Migrations ready at the same time run in orde
 
 ## Using libraries that declare migrations (in an application)
 
-Nothing to do: the libraries bring the starter, and their tables exist before the application's
-own changelog runs, so it can reference them. To run the changelogs yourself (a schema per tenant,
+Nothing to add: the libraries bring the starter, and their tables exist before the application's
+own changelog runs, so it can reference them. The starter turns on Spring Boot's Liquibase too, which
+needs a changelog of the application's own: add one (an empty `databaseChangeLog: []` will do), or
+set `spring.liquibase.enabled=false`, which leaves migratory running. To run the changelogs yourself (a schema per tenant,
 migrations outside the application), set `migratory.enabled=false` and include them in your own
 changelog; nothing runs twice when you switch.
 

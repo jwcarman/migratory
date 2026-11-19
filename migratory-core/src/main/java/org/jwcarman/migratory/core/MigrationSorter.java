@@ -82,6 +82,11 @@ public final class MigrationSorter {
     if (order.size() < byName.size()) {
       TreeSet<String> stuck = new TreeSet<>(byName.keySet());
       order.forEach(migration -> stuck.remove(migration.name()));
+      // what only waits on the cycle is stuck too: peel off what nothing stuck waits on
+      boolean peeled = true;
+      while (peeled) {
+        peeled = stuck.removeIf(name -> next.get(name).stream().noneMatch(stuck::contains));
+      }
       throw new MigratoryException(
           "Migrations "
               + String.join(", ", stuck)

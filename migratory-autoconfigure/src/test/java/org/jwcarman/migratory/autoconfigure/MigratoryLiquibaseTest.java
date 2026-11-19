@@ -135,6 +135,18 @@ class MigratoryLiquibaseTest {
   }
 
   @Test
+  void handIncludeWithoutClasspathPrefixRunsNothingTwice() {
+    runner
+        .withPropertyValues(
+            "spring.liquibase.change-log=classpath:app-changelog/includes-inventory-bare.yaml")
+        .run(
+            context -> {
+              assertThat(context).hasNotFailed();
+              assertThat(changesets(context)).containsExactly("inventory-1", "orders-1");
+            });
+  }
+
+  @Test
   void switchingFromHandIncludesRunsNothingAgain() {
     String[] database = MigratoryTestPostgres.freshDatabaseProperties();
     runner
@@ -380,7 +392,7 @@ class MigratoryLiquibaseTest {
     runner
         .withClassLoader(new FilteredClassLoader(SpringLiquibase.class))
         .withPropertyValues("migratory.enabled=false")
-        .run(context -> assertThat(context).hasNotFailed());
+        .run(context -> assertThat(context).hasNotFailed().doesNotHaveBean(String.class));
   }
 
   @Test

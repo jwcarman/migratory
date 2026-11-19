@@ -1,2 +1,5 @@
 org.springframework.boot.sql.init.dependency.DatabaseInitializerDetector=\
 org.jwcarman.migratory.autoconfigure.MigratoryDatabaseInitializerDetector
+
+org.springframework.boot.diagnostics.FailureAnalyzer=\
+org.jwcarman.migratory.autoconfigure.MigratoryFailureAnalyzer

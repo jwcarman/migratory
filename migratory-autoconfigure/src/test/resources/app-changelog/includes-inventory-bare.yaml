@@ -1,0 +1,3 @@
+databaseChangeLog:
+  - include:
+      file: test-libs/inventory/changelog.xml

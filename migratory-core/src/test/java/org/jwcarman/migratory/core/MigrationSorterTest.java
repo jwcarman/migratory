@@ -28,6 +28,16 @@ import org.junit.jupiter.api.Test;
 
 class MigrationSorterTest {
 
+  @Test
+  void cycleMessageNamesOnlyTheCycle() {
+    // c waits on a, so it never becomes ready either, but it is not part of the cycle
+    List<Migration> migrations = List.of(after("a", "b"), after("b", "a"), after("c", "a"));
+
+    assertThatThrownBy(() -> MigrationSorter.sort(migrations))
+        .isInstanceOf(MigratoryException.class)
+        .hasMessageStartingWith("Migrations a, b cannot be ordered");
+  }
+
   static Migration migration(String name, Set<String> after, Set<String> before) {
     return new Migration(name, "classpath:" + name + "/changelog.xml", after, before, name);
   }

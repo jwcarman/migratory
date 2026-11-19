@@ -159,12 +159,16 @@ public class MigratoryAutoConfiguration {
   @Conditional({LiquibaseMissingCondition.class, DeclarationsPresentCondition.class})
   static class LiquibaseRequiredConfiguration {
 
+    /** What the check leaves behind when migratory is off: a type nothing else injects. */
+    static final class LiquibaseNotRequired {}
+
     // exists only to fail startup, so it must be created even under lazy initialization
     @Bean
     @Lazy(false)
-    Object migratoryLiquibaseRequired(Environment environment, ResourceLoader resourceLoader) {
+    LiquibaseNotRequired migratoryLiquibaseRequired(
+        Environment environment, ResourceLoader resourceLoader) {
       if (!environment.getProperty(ENABLED, Boolean.class, true)) {
-        return ENABLED + "=false";
+        return new LiquibaseNotRequired();
       }
       String names =
           Migrations.load(resourceLoader.getClassLoader()).stream()

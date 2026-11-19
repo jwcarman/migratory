@@ -17,14 +17,15 @@ package org.jwcarman.migratory.core;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /** Reads the migrations libraries declare in {@value #LOCATION}. */
 public final class MigrationDeclarations {
@@ -82,23 +84,41 @@ public final class MigrationDeclarations {
     return List.copyOf(migrations);
   }
 
-  private static Set<URL> urls(ClassLoader classLoader) {
-    Set<URL> urls = new LinkedHashSet<>();
+  private static Collection<URL> urls(ClassLoader classLoader) {
+    // keyed by the URL's text: URL.equals may resolve host names
+    Map<String, URL> urls = new LinkedHashMap<>();
     try {
       Enumeration<URL> found = classLoader.getResources(LOCATION);
-      urls.addAll(Collections.list(found));
+      Collections.list(found).forEach(url -> urls.putIfAbsent(url.toExternalForm(), url));
     } catch (IOException e) {
-      throw new UncheckedIOException("Cannot search the class path for " + LOCATION, e);
+      throw new MigratoryException("Cannot search the class path for " + LOCATION, e);
     }
-    return urls;
+    return urls.values();
   }
 
   private static Properties load(URL url) {
-    Properties properties = new Properties();
+    Set<String> repeated = new TreeSet<>();
+    // Properties keeps the last of a repeated key; a declaration with one is refused instead
+    Properties properties =
+        new Properties() {
+          @Override
+          public synchronized Object put(Object key, Object value) {
+            if (containsKey(key)) {
+              repeated.add(String.valueOf(key));
+            }
+            return super.put(key, value);
+          }
+        };
     try (InputStream in = url.openStream()) {
       properties.load(in);
     } catch (IOException e) {
       throw new MigratoryException("Cannot read migration declaration " + url, e);
+    }
+    if (!repeated.isEmpty()) {
+      throw invalid(
+          url.toString(),
+          repeated.stream().map(key -> "'" + key + "'").collect(Collectors.joining(", "))
+              + " written twice");
     }
     return properties;
   }
@@ -134,10 +154,15 @@ public final class MigrationDeclarations {
     if (path.isEmpty() || path.startsWith("/")) {
       throw invalid(
           source,
-          "changelog path '"
-              + path
-              + "' must not be empty or start with /: Liquibase records the path as written,"
-              + " and an include of the same changelog writes it without the slash");
+          "changelog path '" + path + "' must not be empty: write it without the leading slash");
+    }
+    if (!path.contains("/")) {
+      throw invalid(
+          source,
+          "changelog '"
+              + changelog
+              + "' must be in a directory of the library's own, such as com/example/db/: a native"
+              + " image includes everything under the changelog's directory");
     }
     Set<String> after = names(properties, AFTER);
     Set<String> before = names(properties, BEFORE);

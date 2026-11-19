@@ -45,6 +45,6 @@ jobs:
         with:
           name: ${{ matrix.app }}-logs
           path: |
-            migratory-native-tests/${{ matrix.app }}/target/app.log
+            migratory-native-tests/${{ matrix.app }}/target/app-*.log
             migratory-native-tests/${{ matrix.app }}/target/failsafe-reports/
           if-no-files-found: ignore

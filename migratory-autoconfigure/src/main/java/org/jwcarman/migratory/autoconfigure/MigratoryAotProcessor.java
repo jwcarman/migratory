@@ -41,12 +41,12 @@ import org.springframework.core.io.ByteArrayResource;
  */
 public final class MigratoryAotProcessor implements BeanFactoryInitializationAotProcessor {
 
+  private static final String LIQUIBASE_SCHEMAS = "www.liquibase.org/xml/ns/**/*.xsd";
+
   /** Creates the processor; Spring loads it from {@code META-INF/spring/aot.factories}. */
   public MigratoryAotProcessor() {
     // no state
   }
-
-  private static final String LIQUIBASE_SCHEMAS = "www.liquibase.org/xml/ns/**/*.xsd";
 
   @Override
   public BeanFactoryInitializationAotContribution processAheadOfTime(

@@ -22,7 +22,8 @@ A name that no migration on the class path has is ignored, as Spring Boot ignore
 `@AutoConfiguration(after = ...)`. A library can therefore run after an optional library when it is
 installed, and the same declaration works when it is not.
 
-Declarations that form a cycle fail startup, naming the migrations in it.
+Declarations that form a cycle fail startup, naming the migrations in it (not those that only wait
+on it).
 
 The order only has to hold on each run. Liquibase skips changesets it has already recorded, so the
 order can change between releases, a new library slotting in between two others, without anything

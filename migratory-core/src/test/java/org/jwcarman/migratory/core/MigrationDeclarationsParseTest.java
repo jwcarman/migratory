@@ -70,7 +70,7 @@ class MigrationDeclarationsParseTest {
 
   @Test
   void rejectsMissingName() {
-    assertFails("changelog=classpath:x.xml", "name");
+    assertFails("changelog=classpath:db/x.xml", "name");
   }
 
   @Test
@@ -80,12 +80,12 @@ class MigrationDeclarationsParseTest {
 
   @Test
   void rejectsBadName() {
-    assertFails("name=Who_RBAC\nchangelog=classpath:x.xml", "Who_RBAC");
+    assertFails("name=Who_RBAC\nchangelog=classpath:db/x.xml", "Who_RBAC");
   }
 
   @Test
   void rejectsUnknownKey() {
-    assertFails("name=roux\nchangelog=classpath:x.xml\nafer=who-rbac", "afer");
+    assertFails("name=roux\nchangelog=classpath:db/x.xml\nafer=who-rbac", "afer");
   }
 
   @Test
@@ -95,12 +95,18 @@ class MigrationDeclarationsParseTest {
 
   @Test
   void rejectsLeadingSlashInChangelog() {
-    assertFails("name=roux\nchangelog=classpath:/org/x.xml", "/org/x.xml");
+    assertFails("name=roux\nchangelog=classpath:/org/x.xml", "without the leading slash");
+  }
+
+  @Test
+  void rejectsChangelogAtClassPathRoot() {
+    // a native image includes the changelog's directory; at the root that would be everything
+    assertFails("name=roux\nchangelog=classpath:roux.xml", "directory");
   }
 
   @Test
   void rejectsSelfReference() {
-    assertFails("name=roux\nchangelog=classpath:x.xml\nafter=roux", "itself");
+    assertFails("name=roux\nchangelog=classpath:db/x.xml\nafter=roux", "itself");
   }
 
   private static void assertFails(String text, String reason) {

@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Enumeration;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -84,6 +85,34 @@ class MigrationDeclarationsDiscoverTest {
           .hasMessageContaining("classpath:a/missing.xml")
           .hasMessageContaining(a.toUri().toURL().toString());
     }
+  }
+
+  @Test
+  void keyWrittenTwiceFails() throws IOException {
+    Path a =
+        library("a", "name=a\nchangelog=classpath:a/changelog.xml\nname=b\n", "a/changelog.xml");
+
+    try (URLClassLoader loader = loader(a)) {
+      assertThatThrownBy(() -> MigrationDeclarations.discover(loader))
+          .isInstanceOf(MigratoryException.class)
+          .hasMessageContaining("'name'")
+          .hasMessageContaining("twice");
+    }
+  }
+
+  @Test
+  void classPathSearchFailureIsAMigratoryException() {
+    ClassLoader broken =
+        new ClassLoader(null) {
+          @Override
+          public Enumeration<URL> getResources(String name) throws IOException {
+            throw new IOException("unreadable");
+          }
+        };
+
+    assertThatThrownBy(() -> MigrationDeclarations.discover(broken))
+        .isInstanceOf(MigratoryException.class)
+        .hasMessageContaining(MigrationDeclarations.LOCATION);
   }
 
   private Path library(String directory, String declaration, String changelog) throws IOException {

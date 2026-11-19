@@ -76,17 +76,29 @@ public final class ResolvedMigrations {
     } catch (IOException e) {
       throw new MigratoryException("Cannot read " + LOCATION, e);
     }
-    int count = Integer.parseInt(properties.getProperty(COUNT, "0"));
-    List<Migration> migrations = new ArrayList<>(count);
-    for (int i = 0; i < count; i++) {
-      migrations.add(
-          new Migration(
-              properties.getProperty(i + ".name"),
-              properties.getProperty(i + ".changelog"),
-              Set.of(),
-              Set.of(),
-              properties.getProperty(i + ".source")));
+    try {
+      int count = Integer.parseInt(properties.getProperty(COUNT, "0"));
+      List<Migration> migrations = new ArrayList<>(count);
+      for (int i = 0; i < count; i++) {
+        migrations.add(
+            new Migration(
+                required(properties, i + ".name"),
+                required(properties, i + ".changelog"),
+                Set.of(),
+                Set.of(),
+                required(properties, i + ".source")));
+      }
+      return List.copyOf(migrations);
+    } catch (IllegalArgumentException e) {
+      throw new MigratoryException(LOCATION + " is damaged: " + e.getMessage(), e);
     }
-    return List.copyOf(migrations);
+  }
+
+  private static String required(Properties properties, String key) {
+    String value = properties.getProperty(key);
+    if (value == null) {
+      throw new IllegalArgumentException(key + " is missing");
+    }
+    return value;
   }
 }
