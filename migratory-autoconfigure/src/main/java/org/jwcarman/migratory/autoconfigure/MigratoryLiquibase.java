@@ -110,8 +110,11 @@ public final class MigratoryLiquibase implements InitializingBean {
     if (liquibase.isDropFirst()) {
       throw new MigratoryException(
           "spring.liquibase.drop-first=true would drop the libraries' tables right after migratory"
-              + " creates them: set migratory.enabled=false and include their changelogs in the"
-              + " application's own, or turn drop-first off.");
+              + " creates them: set migratory.drop-first=true instead, which drops everything"
+              + " before migratory's run, or turn drop-first off.");
+    }
+    if (properties.isDropFirst()) {
+      log.warn("migratory.drop-first is true: dropping everything in the schema first");
     }
     log.info(
         "Running migrations in order: "
@@ -134,6 +137,7 @@ public final class MigratoryLiquibase implements InitializingBean {
     runner.setLiquibaseTablespace(liquibase.getLiquibaseTablespace());
     runner.setDatabaseChangeLogTable(liquibase.getDatabaseChangeLogTable());
     runner.setDatabaseChangeLogLockTable(liquibase.getDatabaseChangeLogLockTable());
+    runner.setDropFirst(properties.isDropFirst());
     if (liquibase.getShowSummary() != null) {
       runner.setShowSummary(UpdateSummaryEnum.valueOf(liquibase.getShowSummary().name()));
     }

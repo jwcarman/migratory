@@ -57,3 +57,7 @@ nothing runs again. See `references/upgrading.md`.
 
 An application using such libraries adds nothing. To include the changelogs by hand instead, set
 `migratory.enabled=false` (`references/turning-it-off.md`).
+
+To rebuild the database on every start in development, set `migratory.drop-first=true`, never
+`spring.liquibase.drop-first`, which fails startup while libraries declare migrations
+(`references/changelog-rules.md`).

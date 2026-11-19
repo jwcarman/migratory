@@ -256,7 +256,35 @@ class MigratoryLiquibaseTest {
                     .getFailure()
                     .rootCause()
                     .isInstanceOf(MigratoryException.class)
-                    .hasMessageContaining("spring.liquibase.drop-first"));
+                    .hasMessageContaining("spring.liquibase.drop-first")
+                    .hasMessageContaining("migratory.drop-first=true"));
+  }
+
+  @Test
+  void migratoryDropFirstRebuildsTheSchemaOnEveryStart() {
+    runner.run(context -> leaveSomethingBehind(context));
+
+    runner
+        .withPropertyValues("migratory.drop-first=true")
+        .run(
+            context -> {
+              assertThat(context).hasNotFailed();
+              assertThat(tables(context))
+                  .doesNotContain("leftover")
+                  .contains("inventory_item", "order_line", "app_note");
+              assertThat(changesets(context)).containsExactly("inventory-1", "orders-1", "app-1");
+            });
+  }
+
+  @Test
+  void withoutMigratoryDropFirstNothingIsDropped() {
+    runner.run(context -> leaveSomethingBehind(context));
+
+    runner.run(
+        context -> {
+          assertThat(context).hasNotFailed();
+          assertThat(tables(context)).contains("leftover");
+        });
   }
 
   @Test
@@ -486,6 +514,11 @@ class MigratoryLiquibaseTest {
                         "SELECT filename FROM databasechangelog ORDER BY orderexecuted",
                         String.class)));
     return result.getFirst();
+  }
+
+  private static void leaveSomethingBehind(AssertableApplicationContext context) {
+    assertThat(context).hasNotFailed();
+    new JdbcTemplate(context.getBean(DataSource.class)).execute("CREATE TABLE leftover (id int)");
   }
 
   private static List<String> changesets(AssertableApplicationContext context) {

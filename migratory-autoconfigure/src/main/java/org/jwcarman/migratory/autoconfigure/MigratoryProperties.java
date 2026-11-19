@@ -28,6 +28,14 @@ public class MigratoryProperties {
    */
   private boolean enabled = true;
 
+  /**
+   * Whether migratory's run drops everything in the schema first: every table, the application's
+   * included, and the history table, so the libraries' tables and then the application's are built
+   * again on every start. For development databases only. Spring Boot's own run keeps {@code
+   * spring.liquibase.drop-first} off.
+   */
+  private boolean dropFirst;
+
   /** Creates the settings with their defaults. */
   public MigratoryProperties() {
     // defaults only
@@ -49,5 +57,23 @@ public class MigratoryProperties {
    */
   public void setEnabled(boolean enabled) {
     this.enabled = enabled;
+  }
+
+  /**
+   * Whether migratory's run drops everything in the schema first.
+   *
+   * @return true when every start rebuilds the schema
+   */
+  public boolean isDropFirst() {
+    return dropFirst;
+  }
+
+  /**
+   * Makes migratory's run drop everything in the schema first, or not.
+   *
+   * @param dropFirst whether every start rebuilds the schema
+   */
+  public void setDropFirst(boolean dropFirst) {
+    this.dropFirst = dropFirst;
   }
 }

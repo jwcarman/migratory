@@ -11,3 +11,5 @@ All notable changes to migratory are documented here. The format follows
 - First release: libraries declare a Liquibase changelog in `META-INF/migratory.properties`, and
   migratory runs every declared changelog in dependency order before the application's own
   Liquibase.
+- `migratory.drop-first` rebuilds the whole schema on every start, for development databases;
+  `spring.liquibase.drop-first` fails startup while migratory has migrations to run.
