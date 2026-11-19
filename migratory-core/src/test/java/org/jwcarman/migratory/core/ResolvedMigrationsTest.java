@@ -102,7 +102,7 @@ class ResolvedMigrationsTest {
     Migration migration =
         new Migration(
             "orders",
-            "classpath:com/exämple/db/changelog.xml",
+            "classpath:com/ex\u00e4\u20ac\uD83D\uDE00/db/changelog.xml",
             Set.of(),
             Set.of(),
             "jar:file:/home/josé/libs/orders.jar!/META-INF/migratory.properties");

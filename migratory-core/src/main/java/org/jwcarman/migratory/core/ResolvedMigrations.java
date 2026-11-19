@@ -39,9 +39,10 @@ public final class ResolvedMigrations {
   private ResolvedMigrations() {}
 
   /**
-   * Writes sorted migrations as the bytes of the file {@link #read(InputStream)} reads: the
-   * properties format's ISO-8859-1, with every other character escaped, so the file is read back
-   * exactly whatever characters a changelog's path or a declaration's location holds.
+   * Writes sorted migrations as the bytes of the file {@link #read(InputStream)} reads. Every
+   * character outside printable ASCII is written as a Unicode escape, so the file is plain ASCII
+   * and reads back exactly whatever characters a changelog's path or a declaration's location
+   * holds.
    *
    * @param sorted the migrations in the order they run
    * @return the file's bytes

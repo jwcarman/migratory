@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -67,6 +68,32 @@ class MigratoryAotProcessorTest {
           .containsExactly("a", "b");
       assertThat(RuntimeHintsPredicates.resource().forResource(ResolvedMigrations.LOCATION))
           .accepts(generation.getRuntimeHints());
+    }
+  }
+
+  @Test
+  void bakesNonAsciiChangelogPathsExactly() throws IOException {
+    // a Latin-1 letter, one above U+00FF and one outside the BMP; a declaration is a properties
+    // file, so it writes them as escapes
+    String directory = "libs/ex\u00e4\u20ac\uD83D\uDE00";
+    library(
+        "u",
+        "name=u\nchangelog=classpath:libs/ex\\u00e4\\u20ac\\uD83D\\uDE00/changelog.xml\n",
+        directory);
+    try (URLClassLoader loader = loader("u")) {
+      TestGenerationContext generation = new TestGenerationContext();
+
+      contribution(loader).applyTo(generation, mock(BeanFactoryInitializationCode.class));
+
+      try (InputStream baked =
+          generation
+              .getGeneratedFiles()
+              .getGeneratedFile(Kind.RESOURCE, ResolvedMigrations.LOCATION)
+              .getInputStream()) {
+        assertThat(ResolvedMigrations.read(baked))
+            .extracting(Migration::changelog)
+            .containsExactly("classpath:" + directory + "/changelog.xml");
+      }
     }
   }
 
