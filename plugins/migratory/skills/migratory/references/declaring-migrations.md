@@ -24,8 +24,8 @@ location, when:
 
 - `name` or `changelog` is missing or blank, or `name` breaks the naming rule;
 - the file has any other key (a typo such as `afer` fails rather than being ignored);
-- `changelog` does not start with `classpath:`, starts with `classpath:/`, has a `.` or `..`
-  segment, sits at the root of the class path rather than in a directory, or names a resource that
+- `changelog` does not start with `classpath:`, starts with `classpath:/`, has an empty, `.` or
+  `..` segment, sits at the root of the class path rather than in a directory, or names a resource that
   does not exist;
 - a key is written twice;
 - a migration names itself in `after` or `before`;

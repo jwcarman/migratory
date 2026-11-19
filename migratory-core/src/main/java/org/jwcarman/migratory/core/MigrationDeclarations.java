@@ -158,7 +158,11 @@ public final class MigrationDeclarations {
       throw invalid(
           source, "changelog '" + changelog + "' must be written without the leading slash");
     }
-    if (Arrays.stream(path.split("/")).anyMatch(part -> part.equals(".") || part.equals(".."))) {
+    String[] segments = path.split("/", -1);
+    if (Arrays.stream(segments).anyMatch(String::isEmpty)) {
+      throw invalid(source, "changelog '" + changelog + "' has an empty segment");
+    }
+    if (Arrays.stream(segments).anyMatch(part -> part.equals(".") || part.equals(".."))) {
       throw invalid(source, "changelog '" + changelog + "' must not contain . or .. segments");
     }
     if (!path.contains("/")) {

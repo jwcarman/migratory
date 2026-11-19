@@ -102,7 +102,14 @@ class MigrationDeclarationsParseTest {
 
   @Test
   void rejectsDotSegmentsInChangelog() {
-    assertFails("name=roux\nchangelog=classpath:db/../roux.xml", "..");
+    assertFails("name=roux\nchangelog=classpath:db/../roux.xml", "must not contain . or ..");
+    assertFails("name=roux\nchangelog=classpath:./roux.xml", "must not contain . or ..");
+  }
+
+  @Test
+  void rejectsEmptySegmentsInChangelog() {
+    assertFails("name=roux\nchangelog=classpath:db//roux.xml", "empty segment");
+    assertFails("name=roux\nchangelog=classpath:db/", "empty segment");
   }
 
   @Test

@@ -90,7 +90,7 @@ public final class ResolvedMigrations {
       }
       return List.copyOf(migrations);
     } catch (IllegalArgumentException e) {
-      throw new MigratoryException(LOCATION + " is damaged: " + e.getMessage(), e);
+      throw new MigratoryException(LOCATION + " is damaged", e);
     }
   }
 

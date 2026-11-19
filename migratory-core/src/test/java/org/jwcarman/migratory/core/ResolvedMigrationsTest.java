@@ -76,9 +76,12 @@ class ResolvedMigrationsTest {
 
   @Test
   void missingEntryFails() {
+    // the reason is the cause's; the failure report appends it once
     assertThatThrownBy(() -> read("count=1\n0.changelog=classpath:a/c.xml\n"))
         .isInstanceOf(MigratoryException.class)
-        .hasMessageContaining(ResolvedMigrations.LOCATION);
+        .hasMessage(ResolvedMigrations.LOCATION + " is damaged")
+        .cause()
+        .hasMessage("0.name is missing");
   }
 
   @Test
