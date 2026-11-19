@@ -62,7 +62,8 @@ public final class MigratoryAotProcessor implements BeanFactoryInitializationAot
       ResourceHints resources = generationContext.getRuntimeHints().resources();
       resources.registerPattern(ResolvedMigrations.LOCATION);
       // Liquibase's own schemas, which changelogs (the generated root among them) name: Liquibase
-      // reads them from its jar, and would otherwise try to download them at startup
+      // reads them from its jar and fails to parse a changelog whose schema it cannot find there.
+      // GraalVM's metadata for Liquibase lists them too, but only for the versions it covers.
       resources.registerPattern(LIQUIBASE_SCHEMAS);
       for (Migration migration : sorted) {
         String path = migration.resourceName();

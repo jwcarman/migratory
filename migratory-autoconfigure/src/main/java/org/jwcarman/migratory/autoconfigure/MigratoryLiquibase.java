@@ -146,7 +146,11 @@ public final class MigratoryLiquibase implements InitializingBean {
     return runner;
   }
 
-  /** The root changelog: an include of each migration's changelog, in order. */
+  /**
+   * The root changelog: an include of each migration's changelog, in order. It names the schema
+   * over http, which a native image accepts without being built for https; Liquibase reads the
+   * schema from its jar either way.
+   */
   String rootChangelog() {
     StringBuilder xml =
         new StringBuilder(
@@ -155,7 +159,7 @@ public final class MigratoryLiquibase implements InitializingBean {
             <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                 xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog \
-            https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
             """);
     for (Migration migration : migrations) {
       xml.append("  <include file=\"").append(escape(migration.changelog())).append("\"/>\n");

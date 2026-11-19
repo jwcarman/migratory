@@ -93,8 +93,8 @@ class MigratoryAotProcessorTest {
 
       contribution(loader).applyTo(generation, mock(BeanFactoryInitializationCode.class));
 
-      // the generated root changelog, and most changelogs, name this schema; without it in the
-      // image Liquibase tries to download it, which a native image refuses for https
+      // the generated root changelog, and most changelogs, name this schema, which Liquibase
+      // reads from its jar
       assertThat(
               RuntimeHintsPredicates.resource()
                   .forResource("www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"))
