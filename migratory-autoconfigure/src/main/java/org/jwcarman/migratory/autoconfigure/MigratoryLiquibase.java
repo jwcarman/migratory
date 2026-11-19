@@ -102,24 +102,36 @@ public final class MigratoryLiquibase implements InitializingBean {
   public void afterPropertiesSet() throws LiquibaseException {
     if (!properties.isEnabled()) {
       log.info("migratory.enabled is false: not running the declared migrations");
+      warnNothingDropped("migratory.enabled is false");
       return;
     }
     if (migrations.isEmpty()) {
+      warnNothingDropped("no migrations are declared");
       return;
     }
     if (liquibase.isDropFirst()) {
       throw new MigratoryException(
           "spring.liquibase.drop-first=true would drop the libraries' tables right after migratory"
-              + " creates them: set migratory.drop-first=true instead, which drops everything"
-              + " before migratory's run, or turn drop-first off.");
+              + " creates them: turn it off, and set migratory.drop-first=true to rebuild the"
+              + " schema before migratory's run instead.");
     }
     if (properties.isDropFirst()) {
-      log.warn("migratory.drop-first is true: dropping everything in the schema first");
+      log.warn("migratory.drop-first is true: dropping everything in the default schema first");
     }
     log.info(
         "Running migrations in order: "
             + migrations.stream().map(Migration::name).collect(Collectors.joining(", ")));
     springLiquibase().afterPropertiesSet();
+  }
+
+  private void warnNothingDropped(String reason) {
+    if (properties.isDropFirst()) {
+      log.warn(
+          "migratory.drop-first is true but "
+              + reason
+              + ": migratory does not run, so nothing is dropped; spring.liquibase.drop-first"
+              + " rebuilds the schema in this case");
+    }
   }
 
   /**

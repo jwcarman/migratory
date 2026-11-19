@@ -30,10 +30,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Set;
 
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.jwcarman.migratory.autoconfigure.MigratoryAutoConfiguration.LiquibaseRequiredConfiguration.LiquibaseNotRequired;
 import org.jwcarman.migratory.core.Migration;
@@ -45,19 +47,24 @@ import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseAutoConfiguration;
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseDataSource;
+import org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 
 import liquibase.UpdateSummaryEnum;
 import liquibase.UpdateSummaryOutputEnum;
+import liquibase.exception.LiquibaseException;
 import liquibase.integration.spring.SpringLiquibase;
 import liquibase.ui.UIServiceEnum;
 
@@ -65,6 +72,7 @@ import liquibase.ui.UIServiceEnum;
  * The migrations declared on the test class path (inventory, then orders after it) run before the
  * application's changelog, whose table references theirs, on PostgreSQL.
  */
+@ExtendWith(OutputCaptureExtension.class)
 class MigratoryLiquibaseTest {
 
   private static final String EMPTY_CHANGELOG = "classpath:app-changelog/empty.yaml";
@@ -257,6 +265,7 @@ class MigratoryLiquibaseTest {
                     .rootCause()
                     .isInstanceOf(MigratoryException.class)
                     .hasMessageContaining("spring.liquibase.drop-first")
+                    .hasMessageContaining("turn it off")
                     .hasMessageContaining("migratory.drop-first=true"));
   }
 
@@ -274,6 +283,46 @@ class MigratoryLiquibaseTest {
                   .contains("inventory_item", "order_line", "app_note");
               assertThat(changesets(context)).containsExactly("inventory-1", "orders-1", "app-1");
             });
+  }
+
+  @Test
+  void migratoryDropFirstWithBootsLiquibaseOffLeavesOnlyTheLibrariesTables() {
+    runner.run(context -> leaveSomethingBehind(context));
+
+    runner
+        .withPropertyValues("migratory.drop-first=true", "spring.liquibase.enabled=false")
+        .run(
+            context -> {
+              assertThat(context).hasNotFailed();
+              assertThat(tables(context))
+                  .contains("inventory_item", "order_line")
+                  .doesNotContain("leftover", "app_note");
+            });
+  }
+
+  @Test
+  void migratoryDropFirstWithNoMigrationsWarnsThatNothingIsDropped(CapturedOutput output)
+      throws LiquibaseException {
+    MigratoryProperties properties = new MigratoryProperties();
+    properties.setDropFirst(true);
+
+    idleRunner(List.of(), properties).afterPropertiesSet();
+
+    assertThat(output).contains("migratory.drop-first is true but no migrations are declared");
+  }
+
+  @Test
+  void migratoryDropFirstWhileDisabledWarnsThatNothingIsDropped(CapturedOutput output)
+      throws LiquibaseException {
+    MigratoryProperties properties = new MigratoryProperties();
+    properties.setEnabled(false);
+    properties.setDropFirst(true);
+    List<Migration> one =
+        List.of(new Migration("orders", "classpath:a/b.xml", Set.of(), Set.of(), "test"));
+
+    idleRunner(one, properties).afterPropertiesSet();
+
+    assertThat(output).contains("migratory.drop-first is true but migratory.enabled is false");
   }
 
   @Test
@@ -514,6 +563,16 @@ class MigratoryLiquibaseTest {
                         "SELECT filename FROM databasechangelog ORDER BY orderexecuted",
                         String.class)));
     return result.getFirst();
+  }
+
+  private static MigratoryLiquibase idleRunner(
+      List<Migration> migrations, MigratoryProperties properties) {
+    return new MigratoryLiquibase(
+        migrations,
+        new DriverManagerDataSource(),
+        new LiquibaseProperties(),
+        properties,
+        new DefaultResourceLoader());
   }
 
   private static void leaveSomethingBehind(AssertableApplicationContext context) {

@@ -41,20 +41,26 @@ Settings about the application's own changelog do not apply: `contexts`, `label-
 
 ## Rebuilding the schema on every start
 
-`migratory.drop-first=true` makes migratory's run drop everything in the schema first: every table,
-the application's included, and the history table. migratory then creates the libraries' tables,
-and Spring Boot's run, which starts after it with an empty history, creates the application's. Use
-it on development databases only, for instance in a `dev` profile:
+`migratory.drop-first=true` makes migratory's run drop everything in the default schema of the
+database it runs against first, the application's tables and the history table included. migratory
+then creates the libraries' tables, and Spring Boot's run, which starts after it with an empty
+history, creates the application's. Use it on development databases only, for instance in a `dev`
+profile:
 
 ```yaml
 migratory:
   drop-first: true
 ```
 
+Only that schema is dropped: tables in other schemas, or in another database when
+`spring.liquibase.url` or a `@LiquibaseDataSource` points migratory elsewhere, stay. With
+`spring.liquibase.enabled=false` the application's tables are dropped and nothing builds them again.
+
 `spring.liquibase.drop-first=true` fails startup while migratory has migrations to run: it drops
 the schema when Spring Boot's run starts, which is after migratory's, so the libraries' tables would
-be gone. Use `migratory.drop-first` instead. With no migrations declared, migratory does not run and
-`spring.liquibase.drop-first` works as usual.
+be gone. Use `migratory.drop-first` instead. When migratory does not run, because
+`migratory.enabled` is false or no migrations are declared, `migratory.drop-first` drops nothing and
+logs a warning saying so; `spring.liquibase.drop-first` works as usual then.
 
 Liquibase extensions on the class path, such as `liquibase-sessionlock`, apply to migratory's run as
 to the application's.

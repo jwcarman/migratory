@@ -139,8 +139,9 @@ At startup, migratory logs the order once at INFO.
   `license-key` apply, as in who's runner. Settings about the application's changelog (`contexts`,
   `label-filter`, `parameters`, `rollback-file`, `tag`, `clear-checksums`, `test-rollback-on-update`)
   do not.
-- **`drop-first`** is not supported: it would wipe the libraries' tables after migratory created
-  them. The guide says so.
+- **`drop-first`**: `spring.liquibase.drop-first` fails startup, since it would wipe the libraries'
+  tables after migratory created them; `migratory.drop-first` (added after this design) applies
+  drop-first to migratory's own run instead.
 - **Extensions.** Liquibase extensions on the classpath (such as `liquibase-sessionlock`) apply,
   through Liquibase's service loader. migratory adds none.
 
