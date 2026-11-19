@@ -445,6 +445,7 @@ limitations under the License.]]></inlineHeader>
                                         <!-- **/ also reaches modules the root build walks into but does not
                                              list, such as migratory-native-tests outside its profile -->
                                         <exclude>**/src/test/resources/**</exclude>
+                                        <exclude>**/src/test/libs/**</exclude>
                                         <exclude>**/src/main/resources/**</exclude>
                                         <exclude>LICENSE</exclude>
                                         <exclude>.github/**</exclude>
