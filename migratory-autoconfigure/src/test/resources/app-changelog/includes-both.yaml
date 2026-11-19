@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: classpath:test-libs/inventory/changelog.xml
+  - include:
+      file: classpath:test-libs/orders/changelog.xml
