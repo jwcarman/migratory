@@ -51,10 +51,11 @@ scp -q "$bundle" "$NATIVE_HOST:migratory-native.bundle"
 echo "building $(git rev-parse --short HEAD) on the build host: ${apps[*]}"
 
 # The remote script takes its settings as arguments, so nothing local is expanded inside it.
+# ssh joins its arguments into one command line, which would drop an empty one: quote each.
 ssh -o ServerAliveInterval=60 "$NATIVE_HOST" bash -s -- \
-  "$NATIVE_DIR" "$NATIVE_JAVA_HOME" "$NATIVE_MAVEN_ARGS" "${apps[@]}" <<'REMOTE'
+  "$(printf '%q ' "$NATIVE_DIR" "$NATIVE_JAVA_HOME" "$NATIVE_MAVEN_ARGS" "${apps[@]}")" <<'REMOTE'
 set -uo pipefail
-dir="${1/#\~/$HOME}"; java_home="$2"; read -r -a maven_args <<<"$3"; shift 3
+dir="${1/#\~/$HOME}"; java_home="${2/#\~/$HOME}"; read -r -a maven_args <<<"$3"; shift 3
 if [[ -n "$java_home" ]]; then
   export JAVA_HOME="$java_home"
   export PATH="$JAVA_HOME/bin:$PATH"
