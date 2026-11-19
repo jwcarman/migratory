@@ -113,6 +113,7 @@
         <module>migratory-core</module>
         <module>migratory-autoconfigure</module>
         <module>migratory-spring-boot-starter</module>
+        <module>migratory-examples</module>
     </modules>
 
     <dependencyManagement>

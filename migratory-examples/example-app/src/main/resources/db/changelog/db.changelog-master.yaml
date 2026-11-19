@@ -1,0 +1,22 @@
+# The application's own changelog. Spring Boot runs it after migratory has run the inventory and
+# orders libraries' migrations, so it can reference their tables.
+databaseChangeLog:
+  - changeSet:
+      id: app-1
+      author: migratory-examples
+      changes:
+        - createTable:
+            tableName: shipment
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: order_line_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_shipment_order_line
+                    references: order_line(id)

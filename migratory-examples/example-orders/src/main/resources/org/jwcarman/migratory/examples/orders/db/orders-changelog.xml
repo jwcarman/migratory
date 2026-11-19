@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="orders-1" author="migratory-examples">
+        <createTable tableName="order_line">
+            <column name="id" type="bigint"><constraints primaryKey="true"/></column>
+            <column name="item_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fk_order_line_item" references="inventory_item(id)"/>
+            </column>
+            <column name="quantity" type="int"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
