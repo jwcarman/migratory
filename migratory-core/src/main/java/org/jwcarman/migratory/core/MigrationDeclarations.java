@@ -15,8 +15,19 @@
  */
 package org.jwcarman.migratory.core;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -38,6 +49,59 @@ public final class MigrationDeclarations {
   private static final Pattern NAME_PATTERN = Pattern.compile("[a-z0-9]+(-[a-z0-9]+)*");
 
   private MigrationDeclarations() {}
+
+  /**
+   * Finds every declaration on a class path: one per jar or directory holding {@value #LOCATION}.
+   *
+   * @param classLoader the class loader whose class path is searched
+   * @return the declared migrations, by name
+   * @throws MigratoryException when a declaration is invalid, its changelog does not exist, or two
+   *     declare the same name
+   */
+  public static List<Migration> discover(ClassLoader classLoader) {
+    Map<String, Migration> byName = new HashMap<>();
+    for (URL url : urls(classLoader)) {
+      String source = url.toString();
+      Migration migration = parse(load(url), source);
+      if (classLoader.getResource(migration.resourceName()) == null) {
+        throw invalid(source, "changelog " + migration.changelog() + " does not exist");
+      }
+      Migration existing = byName.putIfAbsent(migration.name(), migration);
+      if (existing != null) {
+        throw new MigratoryException(
+            "Two migrations are named '"
+                + migration.name()
+                + "': "
+                + existing.source()
+                + " and "
+                + source);
+      }
+    }
+    List<Migration> migrations = new ArrayList<>(byName.values());
+    migrations.sort(Comparator.comparing(Migration::name));
+    return List.copyOf(migrations);
+  }
+
+  private static Set<URL> urls(ClassLoader classLoader) {
+    Set<URL> urls = new LinkedHashSet<>();
+    try {
+      Enumeration<URL> found = classLoader.getResources(LOCATION);
+      urls.addAll(Collections.list(found));
+    } catch (IOException e) {
+      throw new UncheckedIOException("Cannot search the class path for " + LOCATION, e);
+    }
+    return urls;
+  }
+
+  private static Properties load(URL url) {
+    Properties properties = new Properties();
+    try (InputStream in = url.openStream()) {
+      properties.load(in);
+    } catch (IOException e) {
+      throw new MigratoryException("Cannot read migration declaration " + url, e);
+    }
+    return properties;
+  }
 
   /**
    * Reads one declaration.
