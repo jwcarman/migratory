@@ -42,6 +42,7 @@ import org.jwcarman.migratory.core.MigratoryException;
 import org.springframework.boot.LazyInitializationBeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseAutoConfiguration;
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseDataSource;
 import org.springframework.boot.test.context.FilteredClassLoader;
@@ -394,6 +395,60 @@ class MigratoryLiquibaseTest {
                         "migratory found migrations (inventory, orders) but Liquibase is not on"
                             + " the classpath: add spring-boot-starter-liquibase, or set"
                             + " migratory.enabled=false and include their changelogs yourself."));
+  }
+
+  @Test
+  void bootsLiquibaseSupportMissingFailsWithMessage() {
+    // Boot's Liquibase auto-configuration is itself in the hidden package, so it is not listed
+    new ApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                DataSourceAutoConfiguration.class, MigratoryAutoConfiguration.class))
+        .withPropertyValues(MigratoryTestPostgres.freshDatabaseProperties())
+        .withClassLoader(new FilteredClassLoader("org.springframework.boot.liquibase."))
+        .run(
+            context ->
+                assertThat(context)
+                    .getFailure()
+                    .rootCause()
+                    .hasMessageContaining("Liquibase is not on the classpath"));
+  }
+
+  @Test
+  void jdbcConnectionDetailsAloneAreADatabaseToMigrate() {
+    // as for Boot's own Liquibase, the details mean a DataSource is coming; with none, migratory
+    // says so rather than standing down
+    new ApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                LiquibaseAutoConfiguration.class, MigratoryAutoConfiguration.class))
+        .withPropertyValues("spring.liquibase.enabled=false")
+        .withBean(JdbcConnectionDetails.class, MigratoryLiquibaseTest::connectionDetails)
+        .run(
+            context ->
+                assertThat(context)
+                    .getFailure()
+                    .rootCause()
+                    .hasMessageContaining("no single DataSource"));
+  }
+
+  private static JdbcConnectionDetails connectionDetails() {
+    return new JdbcConnectionDetails() {
+      @Override
+      public String getUsername() {
+        return MigratoryTestPostgres.username();
+      }
+
+      @Override
+      public String getPassword() {
+        return MigratoryTestPostgres.password();
+      }
+
+      @Override
+      public String getJdbcUrl() {
+        return MigratoryTestPostgres.newDatabaseUrl();
+      }
+    };
   }
 
   @Test

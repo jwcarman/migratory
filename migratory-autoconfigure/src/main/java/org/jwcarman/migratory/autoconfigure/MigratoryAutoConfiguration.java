@@ -198,13 +198,13 @@ public class MigratoryAutoConfiguration {
     }
 
     @ConditionalOnBean(DataSource.class)
-    static class DataSourceBean {}
+    interface DataSourceBean {}
 
     @ConditionalOnBean(JdbcConnectionDetails.class)
-    static class JdbcConnectionDetailsBean {}
+    interface JdbcConnectionDetailsBean {}
 
     @ConditionalOnProperty("spring.liquibase.url")
-    static class LiquibaseUrl {}
+    interface LiquibaseUrl {}
   }
 
   /** Matches when Liquibase, or Spring Boot's support for it, is missing. */
@@ -215,11 +215,11 @@ public class MigratoryAutoConfiguration {
     }
 
     @ConditionalOnMissingClass("liquibase.integration.spring.SpringLiquibase")
-    static class LiquibaseCoreMissing {}
+    interface LiquibaseCoreMissing {}
 
     @ConditionalOnMissingClass(
         "org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties")
-    static class BootSupportMissing {}
+    interface BootSupportMissing {}
   }
 
   /** Matches when at least one library declares a migration. */
