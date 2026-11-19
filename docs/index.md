@@ -4,10 +4,14 @@ Liquibase migrations for Spring Boot libraries, discovered and run in order.
 
 *Are you suggesting coconuts migrate?* No, but your libraries' tables can.
 
-A library with its own tables has to get them into the application's database. Without migratory
-that means either asking every application to include the library's changelog in the right place
-of its own master changelog, or the library running its own Liquibase with code every library
-copies. migratory replaces both with one file per library:
+A Spring Boot library that owns tables has no good way to ship them. Either every application
+includes the library's changelog in its own master changelog, in the right order, leaving out the
+optional modules it doesn't use, and remembers on every upgrade; or the library runs its own
+Liquibase and gets ordering, test slices, lazy initialization and native images right on its own.
+Schema scripts behind an `initialize-schema` switch avoid both, but they create tables once and
+never evolve them.
+
+migratory replaces all of that with one file in the library's jar:
 
 ```properties
 # META-INF/migratory.properties, in the library's jar

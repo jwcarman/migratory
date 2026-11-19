@@ -13,9 +13,17 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jwcarman_migratory&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jwcarman_migratory)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=jwcarman_migratory&metric=coverage)](https://sonarcloud.io/summary/new_code?id=jwcarman_migratory)
 
-Liquibase migrations for Spring Boot libraries, discovered and run in order. A library with its own
-tables puts one small file in its jar saying which changelog it has and what it runs after.
-migratory finds every such file on the class path, sorts them, and runs them in one Liquibase
+Liquibase migrations for Spring Boot libraries, discovered and run in order.
+
+A Spring Boot library that owns tables has no good way to ship them. Either every application
+includes the library's changelog in its own master changelog, in the right order, leaving out the
+optional modules it doesn't use, and remembers on every upgrade; or the library runs its own
+Liquibase and gets ordering, test slices, lazy initialization and native images right on its own.
+Schema scripts behind an `initialize-schema` switch avoid both, but they create tables once and
+never evolve them.
+
+With migratory, a library puts one small file in its jar saying which changelog it has and what it
+runs after. migratory finds every such file on the class path, sorts them, and runs them in one Liquibase
 update before the application's own Liquibase, against the same database and settings. The
 application lists nothing, and no library lists the optional pieces that might not be installed.
 
