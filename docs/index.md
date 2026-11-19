@@ -2,6 +2,8 @@
 
 Liquibase migrations for Spring Boot libraries, discovered and run in order.
 
+*Are you suggesting coconuts migrate?* No, but your libraries' tables can.
+
 A library with its own tables has to get them into the application's database. Without migratory
 that means either asking every application to include the library's changelog in the right place
 of its own master changelog, or the library running its own Liquibase with code every library

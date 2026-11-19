@@ -19,6 +19,8 @@ migratory finds every such file on the class path, sorts them, and runs them in 
 update before the application's own Liquibase, against the same database and settings. The
 application lists nothing, and no library lists the optional pieces that might not be installed.
 
+*Are you suggesting coconuts migrate?* No, but your libraries' tables can.
+
 **Documentation: [jwcarman.github.io/migratory](https://jwcarman.github.io/migratory/)**
 
 ## Requirements
