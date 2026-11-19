@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright © 2026 James Carman
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.jwcarman.migratory</groupId>
+    <artifactId>migratory-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Migratory - Parent</name>
+    <description>Discovers the Liquibase migrations that Spring Boot libraries declare and runs them in dependency order before the application's own</description>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>25</java.version>
+        <!-- A fixed timestamp for the entries in every jar, so rebuilding the same source gives
+             byte-for-byte the same jars (https://maven.apache.org/guides/mini/guide-reproducible-builds.html).
+             It is not a release date and never needs to change. -->
+        <project.build.outputTimestamp>2026-11-19T12:00:00Z</project.build.outputTimestamp>
+        <required.maven.version>3.9</required.maven.version>
+
+        <!-- Suppress Maven 4.0.0 future compatibility warnings -->
+        <maven.project.sourceRoots.warningsDisabled>true</maven.project.sourceRoots.warningsDisabled>
+
+        <!-- Dependency Versions -->
+        <jazzer.version>0.30.0</jazzer.version>
+        <spring-boot.version>4.1.2</spring-boot.version>
+
+        <!-- Plugin Versions -->
+        <compiler.plugin.version>3.16.0</compiler.plugin.version>
+        <cyclonedx.plugin.version>2.9.3</cyclonedx.plugin.version>
+        <dependency.plugin.version>3.11.0</dependency.plugin.version>
+        <enforcer.plugin.version>3.7.0</enforcer.plugin.version>
+        <failsafe.plugin.version>3.6.1</failsafe.plugin.version>
+        <gpg.plugin.version>3.2.8</gpg.plugin.version>
+        <jacoco.plugin.version>0.8.16</jacoco.plugin.version>
+        <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
+        <sonar.plugin.version>5.8.0.7211</sonar.plugin.version>
+        <sonatype.plugin.version>0.12.0</sonatype.plugin.version>
+        <source.plugin.version>3.4.0</source.plugin.version>
+        <surefire.plugin.version>3.6.1</surefire.plugin.version>
+        <license.plugin.version>5.1.2</license.plugin.version>
+        <spotless.plugin.version>3.11.0</spotless.plugin.version>
+        <google-java-format.version>1.35.0</google-java-format.version>
+        <!-- migratory-bom only; see its pom for why. -->
+        <flatten-maven-plugin.version>1.9.0</flatten-maven-plugin.version>
+        <exec-maven-plugin.version>3.7.0</exec-maven-plugin.version>
+
+        <!-- SonarCloud Configuration -->
+        <sonar.organization>jwcarman</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.projectKey>jwcarman_migratory</sonar.projectKey>
+        <sonar.coverage.exclusions>migratory-examples/**,migratory-native-tests/**</sonar.coverage.exclusions>
+        <!-- Every module reads the combined report: code tested from another module counts. -->
+        <sonar.coverage.jacoco.xmlReportPaths>${maven.multiModuleProjectDirectory}/migratory-coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+
+        <!-- JaCoCo argLine (overridden by jacoco:prepare-agent when ci profile is active) -->
+        <jacocoArgLine></jacocoArgLine>
+
+        <!-- License Header Configuration -->
+        <license.owner>James Carman</license.owner>
+
+    </properties>
+
+    <url>https://github.com/jwcarman/migratory</url>
+    <inceptionYear>2026</inceptionYear>
+
+    <developers>
+        <developer>
+            <id>jwcarman</id>
+            <name>James Carman</name>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>Apache 2</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/jwcarman/migratory</url>
+        <connection>scm:git:git@github.com:jwcarman/migratory.git</connection>
+        <developerConnection>scm:git:git@github.com:jwcarman/migratory.git</developerConnection>
+    </scm>
+
+    <modules>
+        <!-- Must stay first: the bom's flattened pom is written by its process-resources. -->
+        <module>migratory-bom</module>
+        <module>migratory-core</module>
+        <module>migratory-autoconfigure</module>
+        <module>migratory-spring-boot-starter</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.code-intelligence</groupId>
+                <artifactId>jazzer-junit</artifactId>
+                <version>${jazzer.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Version only. migratory-bom is the one module that binds it; see its pom for why. -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${flatten-maven-plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>${required.maven.version}</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>${java.version}</version>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler.plugin.version}</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <!-- every javac warning, printed in full (not as a one-line "uses unchecked" note) -->
+                    <showWarnings>true</showWarnings>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${dependency.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.plugin.version}</version>
+                <configuration>
+                    <argLine>@{jacocoArgLine} -javaagent:"${org.mockito:mockito-core:jar}" -javaagent:"${net.bytebuddy:byte-buddy-agent:jar}" -Xshare:off</argLine>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${failsafe.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <forkedProcessExitTimeoutInSeconds>30</forkedProcessExitTimeoutInSeconds>
+                    <argLine>@{jacocoArgLine} -javaagent:"${org.mockito:mockito-core:jar}" -javaagent:"${net.bytebuddy:byte-buddy-agent:jar}" -Xshare:off</argLine>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar.plugin.version}</version>
+            </plugin>
+            <!-- Copies migratory's guides and changelog into the agent skill (plugins/migratory/skills/migratory/references),
+                 so a build from the root refreshes them; CI fails when a commit's copies are stale. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>sync-skill-references</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${java.home}/bin/java</executable>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <arguments>
+                                <argument>plugins/SyncReferences.java</argument>
+                                <argument>${project.basedir}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.plugin.version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>${google-java-format.version}</version>
+                            <style>GOOGLE</style>
+                        </googleJavaFormat>
+                        <removeUnusedImports/>
+                        <importOrder>
+                            <order>java,javax,jakarta,org,com,</order>
+                        </importOrder>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- A small app built native, run against PostgreSQL and checked over JDBC:
+             ./mvnw -Pnative-tests verify -pl migratory-native-tests/<app> -am            (on the JVM)
+             ./mvnw -Pnative-tests -Dnative verify -pl migratory-native-tests/<app> -am   (native; GraalVM 25)
+             Never part of the ci or release builds. See CONTRIBUTING.md. -->
+        <profile>
+            <id>native-tests</id>
+            <modules>
+                <module>migratory-native-tests</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>ci</id>
+            <!-- Reads every library module's coverage; its dependencies order it after them. -->
+            <modules>
+                <module>migratory-coverage</module>
+            </modules>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco.plugin.version}</version>
+                        <configuration>
+                            <!-- This writes the JaCoCo agent args into the property -->
+                            <propertyName>jacocoArgLine</propertyName>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>report</id>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <formats>
+                                        <format>XML</format>
+                                    </formats>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${sonatype.plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>${source.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${javadoc.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- A CycloneDX SBOM per module (-cyclonedx.json and .xml), attached so it is signed
+                         and published to Maven Central beside the jar. -->
+                    <plugin>
+                        <groupId>org.cyclonedx</groupId>
+                        <artifactId>cyclonedx-maven-plugin</artifactId>
+                        <version>${cyclonedx.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>make-sbom</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>makeBom</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <projectType>library</projectType>
+                            <outputFormat>all</outputFormat>
+                            <includeTestScope>false</includeTestScope>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${gpg.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>license</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.mycila</groupId>
+                        <artifactId>license-maven-plugin</artifactId>
+                        <version>${license.plugin.version}</version>
+                        <configuration>
+                            <properties>
+                                <owner>${license.owner}</owner>
+                            </properties>
+                            <licenseSets>
+                                <licenseSet>
+                                    <inlineHeader><![CDATA[Copyright © ${year} ${owner}
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.]]></inlineHeader>
+                                    <excludes>
+                                        <exclude>**/README</exclude>
+                                        <exclude>**/README.md</exclude>
+                                        <!-- **/ also reaches modules the root build walks into but does not
+                                             list, such as migratory-native-tests outside its profile -->
+                                        <exclude>**/src/test/resources/**</exclude>
+                                        <exclude>**/src/main/resources/**</exclude>
+                                        <exclude>LICENSE</exclude>
+                                        <exclude>.github/**</exclude>
+                                        <exclude>**/*.txt</exclude>
+                                        <exclude>**/*.sh</exclude>
+                                        <exclude>**/*.md</exclude>
+                                        <exclude>specs/**</exclude>
+                                        <exclude>docs/**</exclude>
+                                        <!-- Local, git-ignored directories: the plugin walks the filesystem,
+                                             not the index, so it would scan them anyway. -->
+                                        <exclude>.superpowers/**</exclude>
+                                        <exclude>.worktrees/**</exclude>
+                                        <exclude>.claude/**</exclude>
+                                        <!-- the MkDocs build output -->
+                                        <exclude>site/**</exclude>
+                                    </excludes>
+                                </licenseSet>
+                            </licenseSets>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- Mutation testing, opt-in: ./mvnw -Ppit verify -pl <module> -am
+             Reports land in <module>/target/pit-reports/index.html. -->
+        <profile>
+            <id>pit</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <version>1.30.2</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.pitest</groupId>
+                                <artifactId>pitest-junit5-plugin</artifactId>
+                                <version>1.2.3</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                            <targetClasses>
+                                <param>org.jwcarman.migratory.*</param>
+                            </targetClasses>
+                            <targetTests>
+                                <param>org.jwcarman.migratory.*</param>
+                            </targetTests>
+                            <jvmArgs>
+                                <value>-javaagent:${org.mockito:mockito-core:jar}</value>
+                                <value>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</value>
+                                <value>-Xshare:off</value>
+                            </jvmArgs>
+                            <threads>2</threads>
+                            <failWhenNoMutations>false</failWhenNoMutations>
+                            <timestampedReports>false</timestampedReports>
+                            <outputFormats>
+                                <param>HTML</param>
+                                <param>XML</param>
+                            </outputFormats>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>pit</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>mutationCoverage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

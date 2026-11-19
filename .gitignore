@@ -1,0 +1,28 @@
+target/
+.flattened-pom.xml
+.idea/
+*.iml
+.DS_Store
+*.log
+.classpath
+.project
+.settings/
+.worktrees/
+logs/
+
+# superpowers implementation plans are local execution scripts; specs are tracked
+docs/superpowers/plans/
+
+# superpowers working files (SDD ledgers, briefs, review packages)
+.superpowers/
+
+# MkDocs build output and local Python environments
+site/
+.venv/
+
+# Jazzer: the corpus it grows while fuzzing (crash inputs worth keeping go in src/test/resources)
+.cifuzz-corpus/
+
+# The single-page app example's npm packages
+node_modules/
+*.tsbuildinfo
