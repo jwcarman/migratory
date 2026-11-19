@@ -1,0 +1,72 @@
+name: CI with Maven
+
+on:
+  # Keeps the SonarCloud token alive. A token is "never expires, if used", so a project that goes
+  # quiet for a month loses it and every build after that fails on a credential nobody revoked.
+  # Twice a month leaves plenty of margin against that.
+  schedule:
+    - cron: '0 9 1,15 * *'
+  push:
+    branches: [ "main" ]
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  # First and fast: a formatting slip or a missing license header fails here, in about a minute,
+  # and the build never starts. A shallow clone, and no compiling: the checks only read the sources,
+  # apart from regenerating the agent skill's references to compare them.
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Set up JDK 25
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+      with:
+        java-version: '25'
+        distribution: 'liberica'
+        cache: maven
+    - name: Check formatting and license headers
+      run: mvn -B -Plicense spotless:check license:check
+    - name: Check the agent skill's references match docs/guides and the changelog
+      run: |
+        mvn -B -N generate-resources
+        if [ -n "$(git status --porcelain -- plugins/migratory/skills/migratory/references)" ]; then
+          echo "::error::The agent skill's references (guides, changelog) are stale. Run ./mvnw -N generate-resources and commit."
+          git status --short -- plugins/migratory/skills/migratory/references
+          exit 1
+        fi
+
+  build:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 0
+    - name: Set up JDK 25
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+      with:
+        java-version: '25'
+        distribution: 'liberica'
+        cache: maven
+    # Sonar runs once the SonarCloud project exists and its token is a repository secret; until
+    # then the build still runs, without the analysis.
+    - name: Build with Maven
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        if [ -n "$SONAR_TOKEN" ]; then
+          mvn -Pci -B verify sonar:sonar
+        else
+          echo "::notice::SONAR_TOKEN is not set; building without the SonarCloud analysis"
+          mvn -Pci -B verify
+        fi

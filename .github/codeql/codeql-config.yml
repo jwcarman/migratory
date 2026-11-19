@@ -1,0 +1,6 @@
+name: migratory CodeQL config
+
+# Tests build throwaway class loaders, temporary files and databases on purpose, so scanning them
+# only produces noise. Production code and the examples stay scanned.
+paths-ignore:
+  - '**/src/test/**'
