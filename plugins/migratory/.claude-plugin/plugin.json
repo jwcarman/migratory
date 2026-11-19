@@ -1,0 +1,9 @@
+{
+  "name": "migratory",
+  "description": "Agent skill for migratory, Liquibase migrations for Spring Boot libraries: declaring a library's migration, ordering it, and the changelog rules that keep upgrades safe.",
+  "author": { "name": "jwcarman" },
+  "homepage": "https://jwcarman.github.io/migratory/",
+  "repository": "https://github.com/jwcarman/migratory",
+  "license": "Apache-2.0",
+  "keywords": ["spring-boot", "liquibase", "database-migrations", "schema"]
+}

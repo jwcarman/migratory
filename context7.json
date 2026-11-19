@@ -1,0 +1,20 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "url": "https://context7.com/jwcarman/migratory",
+  "projectTitle": "migratory (Liquibase migrations for Spring Boot libraries)",
+  "description": "migratory (org.jwcarman.migratory) discovers the Liquibase changelogs Spring Boot libraries declare in META-INF/migratory.properties and runs them in dependency order (after/before) before the application's own Liquibase, on the JVM and in GraalVM native images.",
+  "folders": [
+    "docs"
+  ],
+  "excludeFolders": [
+    "docs/superpowers",
+    "docs/stylesheets"
+  ],
+  "rules": [
+    "A library declares its migration in src/main/resources/META-INF/migratory.properties with name, changelog (a classpath: path without a leading slash), and optional after and before.",
+    "A library depends on org.jwcarman.migratory:migratory-spring-boot-starter; an application using such libraries adds nothing.",
+    "Never edit a released changeset or move a changelog file: its path is part of each changeset's identity.",
+    "Set migratory.enabled=false to include the libraries' changelogs in the application's own changelog instead; nothing runs twice when switching.",
+    "Check https://github.com/jwcarman/migratory/blob/main/CHANGELOG.md against the migratory version in use: entries under Unreleased are not in any release yet."
+  ]
+}

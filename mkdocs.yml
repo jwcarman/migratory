@@ -1,0 +1,123 @@
+#
+# Copyright © 2026 James Carman
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+site_name: migratory
+site_description: Liquibase migrations for Spring Boot libraries, discovered and run in order.
+site_url: https://jwcarman.github.io/migratory/
+repo_url: https://github.com/jwcarman/migratory
+repo_name: jwcarman/migratory
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+
+validation:
+  anchors: warn
+  links:
+    absolute_links: warn
+
+# Process artifacts (superpowers specs and plans) stay out of the site.
+exclude_docs: |
+  /superpowers/
+  /requirements.*
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Source Sans 3
+    code: JetBrains Mono
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+
+# Declaring plugins replaces MkDocs' default list, so search is named here too.
+plugins:
+  - search
+  # https://llmstxt.org: an index of the docs for coding agents at /llms.txt, every page in
+  # one file at /llms-full.txt, and a Markdown copy of each page beside its HTML.
+  - llmstxt:
+      full_output: llms-full.txt
+      markdown_description: |
+        migratory is a Spring Boot 4 library for libraries: a library with its own tables declares
+        its Liquibase changelog in META-INF/migratory.properties (name, changelog, after, before),
+        and migratory finds every declaration on the class path, sorts them and runs them before the
+        application's own Liquibase, on the JVM and in GraalVM native images. Maven coordinates:
+        `org.jwcarman.migratory`; a library depends on `migratory-spring-boot-starter`. The
+        changelog says what each version has: https://github.com/jwcarman/migratory/blob/main/CHANGELOG.md.
+      sections:
+        Start here:
+          - index.md: what migratory is and its modules
+          - guides/getting-started.md: declaring a library's migration, what an application sees
+          - guides/declaring-migrations.md: the declaration file, its keys and what fails startup
+          - guides/ordering.md: after and before, ties, absent names, ordering against Spring Boot's Liquibase
+        Operating:
+          - guides/turning-it-off.md: migratory.enabled, including changelogs by hand, no Liquibase, no database
+          - guides/changelog-rules.md: rules for a library's changelog, the history table, settings that apply
+          - guides/native-images.md: GraalVM native images
+          - guides/testing.md: tests in applications and libraries
+          - guides/configuration.md: every property
+          - guides/upgrading.md: moving between versions, moving a library onto migratory
+        Optional:
+          - agent-skill.md: installing migratory's Agent Skill in Claude Code and other agents
+
+extra_css:
+  - stylesheets/jwcarman.css
+
+nav:
+  - Home: index.md
+  - Guides:
+      - Getting Started: guides/getting-started.md
+      - Declaring Migrations: guides/declaring-migrations.md
+      - Ordering: guides/ordering.md
+      - Turning It Off: guides/turning-it-off.md
+      - Changelog Rules: guides/changelog-rules.md
+      - Native Images: guides/native-images.md
+      - Testing: guides/testing.md
+      - Configuration Reference: guides/configuration.md
+      - Upgrading: guides/upgrading.md
+  - Agent Skill: agent-skill.md
+  - Reference:
+      - API (Javadoc): https://jwcarman.github.io/migratory/api/latest/
+      - Changelog: https://github.com/jwcarman/migratory/blob/main/CHANGELOG.md

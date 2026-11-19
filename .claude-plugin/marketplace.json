@@ -1,0 +1,14 @@
+{
+  "name": "migratory",
+  "owner": {
+    "name": "jwcarman"
+  },
+  "description": "migratory's agent skill: Liquibase migrations for Spring Boot libraries, discovered and run in order.",
+  "plugins": [
+    {
+      "name": "migratory",
+      "source": "./plugins/migratory",
+      "description": "Agent skill for migratory, Liquibase migrations for Spring Boot libraries, discovered and run in order."
+    }
+  ]
+}
