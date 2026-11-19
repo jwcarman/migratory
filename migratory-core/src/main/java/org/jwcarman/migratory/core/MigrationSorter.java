@@ -15,12 +15,16 @@
  */
 package org.jwcarman.migratory.core;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -82,17 +86,29 @@ public final class MigrationSorter {
     if (order.size() < byName.size()) {
       TreeSet<String> stuck = new TreeSet<>(byName.keySet());
       order.forEach(migration -> stuck.remove(migration.name()));
-      // what only waits on the cycle is stuck too: peel off what nothing stuck waits on
-      boolean peeled = true;
-      while (peeled) {
-        peeled = stuck.removeIf(name -> next.get(name).stream().noneMatch(stuck::contains));
-      }
+      // what only waits on a cycle is stuck too: name only what can reach itself
+      stuck.removeIf(name -> !reachesItself(name, next));
       throw new MigratoryException(
           "Migrations "
               + String.join(", ", stuck)
               + " cannot be ordered: their after and before declarations form a cycle");
     }
     return List.copyOf(order);
+  }
+
+  private static boolean reachesItself(String start, Map<String, List<String>> next) {
+    Set<String> seen = new HashSet<>();
+    Deque<String> pending = new ArrayDeque<>(next.get(start));
+    while (!pending.isEmpty()) {
+      String name = pending.pop();
+      if (name.equals(start)) {
+        return true;
+      }
+      if (seen.add(name)) {
+        pending.addAll(next.get(name));
+      }
+    }
+    return false;
   }
 
   private static void edge(

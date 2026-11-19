@@ -115,6 +115,17 @@ class MigrationDeclarationsDiscoverTest {
         .hasMessageContaining(MigrationDeclarations.LOCATION);
   }
 
+  @Test
+  void malformedEscapeFailsNamingTheFile() throws IOException {
+    Path a = library("a", "name=\\uZZZZ\nchangelog=classpath:a/changelog.xml\n", "a/changelog.xml");
+
+    try (URLClassLoader loader = loader(a)) {
+      assertThatThrownBy(() -> MigrationDeclarations.discover(loader))
+          .isInstanceOf(MigratoryException.class)
+          .hasMessageContaining(a.toUri().toURL().toString());
+    }
+  }
+
   private Path library(String directory, String declaration, String changelog) throws IOException {
     Path root = temp.resolve(directory);
     Path file = root.resolve(MigrationDeclarations.LOCATION);

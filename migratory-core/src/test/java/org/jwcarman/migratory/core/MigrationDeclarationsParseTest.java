@@ -95,7 +95,14 @@ class MigrationDeclarationsParseTest {
 
   @Test
   void rejectsLeadingSlashInChangelog() {
-    assertFails("name=roux\nchangelog=classpath:/org/x.xml", "without the leading slash");
+    assertThatThrownBy(() -> parse("name=roux\nchangelog=classpath:/org/x.xml"))
+        .hasMessageContaining("without the leading slash")
+        .hasMessageNotContaining("empty");
+  }
+
+  @Test
+  void rejectsDotSegmentsInChangelog() {
+    assertFails("name=roux\nchangelog=classpath:db/../roux.xml", "..");
   }
 
   @Test

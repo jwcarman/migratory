@@ -38,6 +38,22 @@ class MigrationSorterTest {
         .hasMessageStartingWith("Migrations a, b cannot be ordered");
   }
 
+  @Test
+  void cycleMessageLeavesOutAPathBetweenTwoCycles() {
+    // p waits on the a-b cycle and the c-d cycle waits on p: p is stuck but on no cycle
+    List<Migration> migrations =
+        List.of(
+            after("a", "b"),
+            after("b", "a"),
+            after("p", "b"),
+            after("c", "p", "d"),
+            after("d", "c"));
+
+    assertThatThrownBy(() -> MigrationSorter.sort(migrations))
+        .isInstanceOf(MigratoryException.class)
+        .hasMessageStartingWith("Migrations a, b, c, d cannot be ordered");
+  }
+
   static Migration migration(String name, Set<String> after, Set<String> before) {
     return new Migration(name, "classpath:" + name + "/changelog.xml", after, before, name);
   }

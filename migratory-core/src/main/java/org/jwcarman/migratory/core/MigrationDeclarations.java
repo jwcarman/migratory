@@ -111,7 +111,7 @@ public final class MigrationDeclarations {
         };
     try (InputStream in = url.openStream()) {
       properties.load(in);
-    } catch (IOException e) {
+    } catch (IOException | IllegalArgumentException e) {
       throw new MigratoryException("Cannot read migration declaration " + url, e);
     }
     if (!repeated.isEmpty()) {
@@ -151,10 +151,15 @@ public final class MigrationDeclarations {
       throw invalid(source, "changelog '" + changelog + "' must start with classpath:");
     }
     String path = changelog.substring(CLASSPATH_PREFIX.length());
-    if (path.isEmpty() || path.startsWith("/")) {
+    if (path.isEmpty()) {
+      throw invalid(source, "changelog '" + changelog + "' has no path after classpath:");
+    }
+    if (path.startsWith("/")) {
       throw invalid(
-          source,
-          "changelog path '" + path + "' must not be empty: write it without the leading slash");
+          source, "changelog '" + changelog + "' must be written without the leading slash");
+    }
+    if (Arrays.stream(path.split("/")).anyMatch(part -> part.equals(".") || part.equals(".."))) {
+      throw invalid(source, "changelog '" + changelog + "' must not contain . or .. segments");
     }
     if (!path.contains("/")) {
       throw invalid(

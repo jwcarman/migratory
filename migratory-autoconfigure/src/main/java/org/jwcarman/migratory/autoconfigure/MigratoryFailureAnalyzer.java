@@ -32,12 +32,14 @@ public class MigratoryFailureAnalyzer extends AbstractFailureAnalyzer<MigratoryE
 
   @Override
   protected FailureAnalysis analyze(Throwable rootFailure, MigratoryException cause) {
+    String description = cause.getMessage();
+    if (cause.getCause() != null && cause.getCause().getMessage() != null) {
+      description += ": " + cause.getCause().getMessage();
+    }
+    // each of migratory's messages says what to do; the action only points at the guides
     return new FailureAnalysis(
-        cause.getMessage(),
-        "Fix the declaration or library named above"
-            + " (https://jwcarman.github.io/migratory/guides/declaring-migrations/), or set"
-            + " migratory.enabled=false and include the libraries' changelogs in the"
-            + " application's own.",
+        description,
+        "Follow the description above. migratory's guides: https://jwcarman.github.io/migratory/",
         cause);
   }
 }

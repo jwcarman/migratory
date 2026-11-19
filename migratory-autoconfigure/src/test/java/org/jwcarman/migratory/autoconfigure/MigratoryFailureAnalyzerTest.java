@@ -17,6 +17,8 @@ package org.jwcarman.migratory.autoconfigure;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.IOException;
+
 import org.junit.jupiter.api.Test;
 import org.jwcarman.migratory.core.MigratoryException;
 import org.springframework.beans.factory.BeanCreationException;
@@ -36,8 +38,22 @@ class MigratoryFailureAnalyzerTest {
             .analyze(new BeanCreationException("migratoryLiquibase", "failed", failure));
 
     assertThat(analysis.getDescription()).isEqualTo("Two migrations are named 'a': x and y");
-    assertThat(analysis.getAction()).contains("migratory.enabled=false");
+    // the message carries its own remedy; the action only points at the guides
+    assertThat(analysis.getAction())
+        .contains("https://jwcarman.github.io/migratory/")
+        .doesNotContain("declaration");
     assertThat(analysis.getCause()).isSameAs(failure);
+  }
+
+  @Test
+  void includesTheUnderlyingReason() {
+    MigratoryException failure =
+        new MigratoryException("Cannot read migration declaration x", new IOException("disk gone"));
+
+    FailureAnalysis analysis = new MigratoryFailureAnalyzer().analyze(failure);
+
+    assertThat(analysis.getDescription())
+        .isEqualTo("Cannot read migration declaration x: disk gone");
   }
 
   @Test

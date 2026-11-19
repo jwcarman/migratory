@@ -73,7 +73,7 @@ public final class ResolvedMigrations {
     Properties properties = new Properties();
     try {
       properties.load(in);
-    } catch (IOException e) {
+    } catch (IOException | IllegalArgumentException e) {
       throw new MigratoryException("Cannot read " + LOCATION, e);
     }
     try {

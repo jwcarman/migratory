@@ -81,6 +81,13 @@ class ResolvedMigrationsTest {
         .hasMessageContaining(ResolvedMigrations.LOCATION);
   }
 
+  @Test
+  void malformedEscapeFails() {
+    assertThatThrownBy(() -> read("count=\\uZZZZ\n"))
+        .isInstanceOf(MigratoryException.class)
+        .hasMessageContaining(ResolvedMigrations.LOCATION);
+  }
+
   private static List<Migration> read(String text) {
     return ResolvedMigrations.read(
         new ByteArrayInputStream(text.getBytes(StandardCharsets.ISO_8859_1)));
