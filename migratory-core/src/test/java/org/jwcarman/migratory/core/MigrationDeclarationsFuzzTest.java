@@ -35,7 +35,7 @@ class MigrationDeclarationsFuzzTest {
     Properties properties = new Properties();
     try {
       properties.load(new ByteArrayInputStream(file));
-    } catch (IOException | IllegalArgumentException notProperties) {
+    } catch (IOException | IllegalArgumentException _) {
       // not a properties file at all: Properties itself refuses it, before migratory sees it
       return;
     }

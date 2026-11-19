@@ -123,6 +123,16 @@ class MigrationDeclarationsParseTest {
     assertFails("name=roux\nchangelog=classpath:db/x.xml\nafter=roux", "itself");
   }
 
+  @Test
+  void rejectsBeforeItself() {
+    assertFails("name=roux\nchangelog=classpath:db/x.xml\nbefore=roux", "itself");
+  }
+
+  @Test
+  void rejectsChangelogWithNoPath() {
+    assertFails("name=roux\nchangelog=classpath:", "has no path after classpath:");
+  }
+
   private static void assertFails(String text, String reason) {
     assertThatThrownBy(() -> parse(text))
         .isInstanceOf(MigratoryException.class)

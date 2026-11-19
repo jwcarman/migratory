@@ -54,6 +54,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 
+import liquibase.UpdateSummaryEnum;
+import liquibase.UpdateSummaryOutputEnum;
 import liquibase.integration.spring.SpringLiquibase;
 import liquibase.ui.UIServiceEnum;
 
@@ -345,7 +347,9 @@ class MigratoryLiquibaseTest {
         .withPropertyValues(
             "spring.liquibase.analytics-enabled=false",
             "spring.liquibase.ui-service=console",
-            "spring.liquibase.license-key=migratory-test-key")
+            "spring.liquibase.license-key=migratory-test-key",
+            "spring.liquibase.show-summary=verbose",
+            "spring.liquibase.show-summary-output=all")
         .run(
             context -> {
               SpringLiquibase liquibase =
@@ -353,6 +357,10 @@ class MigratoryLiquibaseTest {
               assertThat(liquibase.getAnalyticsEnabled()).isFalse();
               assertThat(liquibase.getUiService()).isEqualTo(UIServiceEnum.CONSOLE);
               assertThat(liquibase.getLicenseKey()).isEqualTo("migratory-test-key");
+              // SpringLiquibase has no getters for these
+              assertThat(liquibase)
+                  .extracting("showSummary", "showSummaryOutput")
+                  .containsExactly(UpdateSummaryEnum.VERBOSE, UpdateSummaryOutputEnum.ALL);
             });
   }
 
@@ -435,7 +443,7 @@ class MigratoryLiquibaseTest {
             schema);
   }
 
-  private static List<String> tablesAt(String url) throws SQLException {
+  private static List<String> tablesAt(String url) {
     return new JdbcTemplate(
             new DriverManagerDataSource(
                 url, MigratoryTestPostgres.username(), MigratoryTestPostgres.password()))
@@ -504,6 +512,60 @@ class MigratoryLiquibaseTest {
       liquibase.setDataSource(dataSource);
       liquibase.setChangeLog("classpath:db/changelog/db.changelog-master.yaml");
       return liquibase;
+    }
+  }
+
+  @Test
+  void twoDataSourcesAndNoneChosenFailsSayingHowToChoose() {
+    runner
+        .withUserConfiguration(TwoDataSources.class)
+        .run(
+            context ->
+                assertThat(context)
+                    .getFailure()
+                    .rootCause()
+                    .isInstanceOf(MigratoryException.class)
+                    .hasMessageContaining("@Primary or @LiquibaseDataSource"));
+  }
+
+  @Test
+  void readsSpringLiquibasePropertiesWhenBootsLiquibaseStandsDown() {
+    String other = MigratoryTestPostgres.newDatabaseUrl();
+    runner
+        .withPropertyValues(
+            "spring.liquibase.enabled=false",
+            "spring.liquibase.url=" + other,
+            "spring.liquibase.user=" + MigratoryTestPostgres.username(),
+            "spring.liquibase.password=" + MigratoryTestPostgres.password(),
+            "spring.liquibase.driver-class-name=org.postgresql.Driver")
+        .run(context -> assertThat(context).hasNotFailed());
+    assertThat(tablesAt(other)).contains("inventory_item", "order_line");
+  }
+
+  @Test
+  void findsTheDriverFromTheUrlWhenBootsLiquibaseStandsDown() {
+    String other = MigratoryTestPostgres.newDatabaseUrl();
+    runner
+        .withPropertyValues(
+            "spring.liquibase.enabled=false",
+            "spring.liquibase.url=" + other,
+            "spring.liquibase.user=" + MigratoryTestPostgres.username(),
+            "spring.liquibase.password=" + MigratoryTestPostgres.password())
+        .run(context -> assertThat(context).hasNotFailed());
+    assertThat(tablesAt(other)).contains("inventory_item", "order_line");
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  static class TwoDataSources {
+
+    @Bean
+    DataSource first(Environment environment) {
+      return new DriverManagerDataSource(environment.getRequiredProperty("spring.datasource.url"));
+    }
+
+    @Bean
+    DataSource second(Environment environment) {
+      return new DriverManagerDataSource(environment.getRequiredProperty("spring.datasource.url"));
     }
   }
 }

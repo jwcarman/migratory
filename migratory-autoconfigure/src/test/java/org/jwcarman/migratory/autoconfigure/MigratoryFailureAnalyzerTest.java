@@ -57,6 +57,15 @@ class MigratoryFailureAnalyzerTest {
   }
 
   @Test
+  void leavesOutAnUnderlyingReasonWithoutAMessage() {
+    MigratoryException failure =
+        new MigratoryException("Cannot read migration declaration x", new IOException());
+
+    assertThat(new MigratoryFailureAnalyzer().analyze(failure).getDescription())
+        .isEqualTo("Cannot read migration declaration x");
+  }
+
+  @Test
   void isRegisteredWithSpringBoot() {
     assertThat(
             SpringFactoriesLoader.forDefaultResourceLocation(getClass().getClassLoader())

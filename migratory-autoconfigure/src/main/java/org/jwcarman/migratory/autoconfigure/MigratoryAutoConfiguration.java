@@ -68,7 +68,7 @@ public class MigratoryAutoConfiguration {
   private static final String ENABLED = "migratory.enabled";
 
   /** Creates the auto-configuration; Spring Boot instantiates it. */
-  public MigratoryAutoConfiguration() {
+  MigratoryAutoConfiguration() {
     // no state
   }
 
@@ -159,16 +159,21 @@ public class MigratoryAutoConfiguration {
   @Conditional({LiquibaseMissingCondition.class, DeclarationsPresentCondition.class})
   static class LiquibaseRequiredConfiguration {
 
-    /** What the check leaves behind when migratory is off: a type nothing else injects. */
-    static final class LiquibaseNotRequired {}
+    /**
+     * What the check leaves behind when migratory is off: a type nothing else injects.
+     *
+     * @param reason why Liquibase was not required
+     */
+    record LiquibaseNotRequired(String reason) {}
 
     // exists only to fail startup, so it must be created even under lazy initialization
     @Bean
     @Lazy(false)
     LiquibaseNotRequired migratoryLiquibaseRequired(
         Environment environment, ResourceLoader resourceLoader) {
-      if (!environment.getProperty(ENABLED, Boolean.class, true)) {
-        return new LiquibaseNotRequired();
+      boolean enabled = environment.getProperty(ENABLED, Boolean.class, Boolean.TRUE);
+      if (!enabled) {
+        return new LiquibaseNotRequired(ENABLED + " is false");
       }
       String names =
           Migrations.load(resourceLoader.getClassLoader()).stream()

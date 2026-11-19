@@ -93,6 +93,20 @@ class MigrationSorterTest {
   }
 
   @Test
+  void aMigrationAfterTwoWaitsForBoth() {
+    List<Migration> migrations = List.of(after("c", "a", "b"), after("b"), after("a"));
+
+    assertThat(names(MigrationSorter.sort(migrations))).containsExactly("a", "b", "c");
+  }
+
+  @Test
+  void anOrderSaidFromBothSidesCountsOnce() {
+    List<Migration> migrations = List.of(after("a", "b"), migration("b", Set.of(), Set.of("a")));
+
+    assertThat(names(MigrationSorter.sort(migrations))).containsExactly("b", "a");
+  }
+
+  @Test
   void unknownTargetsAreIgnored() {
     List<Migration> migrations =
         List.of(after("b", "missing"), migration("a", Set.of(), Set.of("absent")));

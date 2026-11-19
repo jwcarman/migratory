@@ -48,7 +48,7 @@ public final class MigrationDeclarations {
   private static final String AFTER = "after";
   private static final String BEFORE = "before";
   private static final Set<String> KEYS = Set.of(NAME, CHANGELOG, AFTER, BEFORE);
-  private static final Pattern NAME_PATTERN = Pattern.compile("[a-z0-9]+(-[a-z0-9]+)*");
+  private static final Pattern NAME_PATTERN = Pattern.compile("[a-z0-9]++(?:-[a-z0-9]++)*+");
 
   private MigrationDeclarations() {}
 
@@ -147,32 +147,7 @@ public final class MigrationDeclarations {
               + "' must be lowercase letters and digits, in words joined by single hyphens");
     }
     String changelog = required(properties, CHANGELOG, source);
-    if (!changelog.startsWith(CLASSPATH_PREFIX)) {
-      throw invalid(source, "changelog '" + changelog + "' must start with classpath:");
-    }
-    String path = changelog.substring(CLASSPATH_PREFIX.length());
-    if (path.isEmpty()) {
-      throw invalid(source, "changelog '" + changelog + "' has no path after classpath:");
-    }
-    if (path.startsWith("/")) {
-      throw invalid(
-          source, "changelog '" + changelog + "' must be written without the leading slash");
-    }
-    String[] segments = path.split("/", -1);
-    if (Arrays.stream(segments).anyMatch(String::isEmpty)) {
-      throw invalid(source, "changelog '" + changelog + "' has an empty segment");
-    }
-    if (Arrays.stream(segments).anyMatch(part -> part.equals(".") || part.equals(".."))) {
-      throw invalid(source, "changelog '" + changelog + "' must not contain . or .. segments");
-    }
-    if (!path.contains("/")) {
-      throw invalid(
-          source,
-          "changelog '"
-              + changelog
-              + "' must be in a directory of the library's own, such as com/example/db/: a native"
-              + " image includes everything under the changelog's directory");
-    }
+    checkChangelog(changelog, source);
     Set<String> after = names(properties, AFTER);
     Set<String> before = names(properties, BEFORE);
     if (after.contains(name) || before.contains(name)) {
@@ -196,6 +171,38 @@ public final class MigrationDeclarations {
         .filter(value -> !value.isEmpty())
         .forEach(names::add);
     return names;
+  }
+
+  private static void checkChangelog(String changelog, String source) {
+    if (!changelog.startsWith(CLASSPATH_PREFIX)) {
+      throw invalidChangelog(source, changelog, "must start with classpath:");
+    }
+    String path = changelog.substring(CLASSPATH_PREFIX.length());
+    if (path.isEmpty()) {
+      throw invalidChangelog(source, changelog, "has no path after classpath:");
+    }
+    if (path.startsWith("/")) {
+      throw invalidChangelog(source, changelog, "must be written without the leading slash");
+    }
+    String[] segments = path.split("/", -1);
+    if (Arrays.stream(segments).anyMatch(String::isEmpty)) {
+      throw invalidChangelog(source, changelog, "has an empty segment");
+    }
+    if (Arrays.stream(segments).anyMatch(part -> part.equals(".") || part.equals(".."))) {
+      throw invalidChangelog(source, changelog, "must not contain . or .. segments");
+    }
+    if (!path.contains("/")) {
+      throw invalidChangelog(
+          source,
+          changelog,
+          "must be in a directory of the library's own, such as com/example/db/: a native image"
+              + " includes everything under the changelog's directory");
+    }
+  }
+
+  private static MigratoryException invalidChangelog(
+      String source, String changelog, String reason) {
+    return invalid(source, "changelog '" + changelog + "' " + reason);
   }
 
   private static MigratoryException invalid(String source, String reason) {

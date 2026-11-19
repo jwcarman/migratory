@@ -121,7 +121,8 @@ class MigratoryAotProcessorTest {
     library("a", "name=a\nchangelog=classpath:libs/a/changelog.xml\nafter=b\n", "libs/a");
     library("b", "name=b\nchangelog=classpath:libs/b/changelog.xml\nafter=a\n", "libs/b");
     try (URLClassLoader loader = loader("a", "b")) {
-      assertThatThrownBy(() -> processor.processAheadOfTime(beanFactory(loader, true)))
+      DefaultListableBeanFactory beanFactory = beanFactory(loader, true);
+      assertThatThrownBy(() -> processor.processAheadOfTime(beanFactory))
           .isInstanceOf(MigratoryException.class)
           .hasMessageContaining("a, b");
     }

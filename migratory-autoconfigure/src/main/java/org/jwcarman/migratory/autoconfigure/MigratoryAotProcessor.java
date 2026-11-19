@@ -79,10 +79,11 @@ public final class MigratoryAotProcessor implements BeanFactoryInitializationAot
       // reads them from its jar and fails to parse a changelog whose schema it cannot find there.
       // GraalVM's metadata for Liquibase lists them too, but only for the versions it covers.
       resources.registerPattern(LIQUIBASE_SCHEMAS);
+      // a declaration's changelog is always in a directory: MigrationDeclarations refuses one at
+      // the class-path root
       for (Migration migration : sorted) {
         String path = migration.resourceName();
-        int slash = path.lastIndexOf('/');
-        resources.registerPattern(slash < 0 ? path : path.substring(0, slash) + "/**");
+        resources.registerPattern(path.substring(0, path.lastIndexOf('/')) + "/**");
       }
     };
   }
