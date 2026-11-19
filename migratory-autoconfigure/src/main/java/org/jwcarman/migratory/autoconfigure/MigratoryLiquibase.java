@@ -23,6 +23,7 @@ import javax.sql.DataSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jwcarman.migratory.core.Migration;
+import org.jwcarman.migratory.core.MigratoryException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties;
 import org.springframework.core.io.ResourceLoader;
@@ -105,6 +106,12 @@ public final class MigratoryLiquibase implements InitializingBean {
     }
     if (migrations.isEmpty()) {
       return;
+    }
+    if (liquibase.isDropFirst()) {
+      throw new MigratoryException(
+          "spring.liquibase.drop-first=true would drop the libraries' tables right after migratory"
+              + " creates them: set migratory.enabled=false and include their changelogs in the"
+              + " application's own, or turn drop-first off.");
     }
     log.info(
         "Running migrations in order: "

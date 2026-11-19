@@ -39,11 +39,12 @@ primary data source's URL, else the primary `DataSource`; and `spring.liquibase.
 Settings about the application's own changelog do not apply: `contexts`, `label-filter`,
 `parameters`, `rollback-file`, `tag`, `clear-checksums`, `test-rollback-on-update`.
 
-## `drop-first` is not supported
+## `drop-first` fails startup
 
 `spring.liquibase.drop-first=true` drops the schema when Spring Boot's run starts, which is after
-migratory ran: the libraries' tables would be gone. An application that needs it sets
-`migratory.enabled=false` and includes the libraries' changelogs in its own.
+migratory ran: the libraries' tables would be gone. So with migratory on and migrations to run,
+`drop-first` fails startup. An application that needs it sets `migratory.enabled=false` and
+includes the libraries' changelogs in its own.
 
 Liquibase extensions on the class path, such as `liquibase-sessionlock`, apply to migratory's run as
 to the application's.

@@ -15,16 +15,19 @@
  */
 package org.jwcarman.migratory.autoconfigure;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.jwcarman.migratory.core.Migration;
 import org.jwcarman.migratory.core.MigrationDeclarations;
 import org.jwcarman.migratory.core.MigrationSorter;
 import org.jwcarman.migratory.core.ResolvedMigrations;
+import org.springframework.aot.generate.GeneratedFiles.Kind;
 import org.springframework.aot.hint.ResourceHints;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotContribution;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.core.io.ByteArrayResource;
 
 /**
  * Bakes the sorted migrations into a native image at build time.
@@ -56,9 +59,20 @@ public final class MigratoryAotProcessor implements BeanFactoryInitializationAot
     }
     List<Migration> sorted = MigrationSorter.sort(MigrationDeclarations.discover(classLoader));
     return (generationContext, code) -> {
+      // process-test-aot gives every test context's processors one set of generated files, and
+      // each writes the same list
       generationContext
           .getGeneratedFiles()
-          .addResourceFile(ResolvedMigrations.LOCATION, ResolvedMigrations.write(sorted));
+          .handleFile(
+              Kind.RESOURCE,
+              ResolvedMigrations.LOCATION,
+              file -> {
+                if (!file.exists()) {
+                  file.create(
+                      new ByteArrayResource(
+                          ResolvedMigrations.write(sorted).getBytes(StandardCharsets.UTF_8)));
+                }
+              });
       ResourceHints resources = generationContext.getRuntimeHints().resources();
       resources.registerPattern(ResolvedMigrations.LOCATION);
       // Liquibase's own schemas, which changelogs (the generated root among them) name: Liquibase

@@ -5,7 +5,8 @@ migratory works in a GraalVM native image with no configuration from libraries o
 Spring's ahead-of-time step (`process-aot`) runs on the JVM with the application's full class path,
 so it sees every declaring library the image will contain. There migratory:
 
-- finds, validates and sorts the declarations, failing the build on a bad declaration or a cycle;
+- finds, validates and sorts the declarations, failing the build on a bad declaration or a cycle
+  (even when `migratory.enabled=false` at build time, since it may be turned on when the image runs);
 - writes the sorted list into the image (`META-INF/migratory/resolved-migrations.properties`), so
   the image never searches its class path for declarations;
 - registers that file, and everything under each declared changelog's directory, as resources, so

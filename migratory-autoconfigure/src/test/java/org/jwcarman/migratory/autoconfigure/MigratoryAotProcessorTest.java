@@ -103,6 +103,20 @@ class MigratoryAotProcessorTest {
   }
 
   @Test
+  void twoTestContextsShareGeneratedFiles() throws IOException {
+    try (URLClassLoader loader = twoLibraries()) {
+      // process-test-aot runs every test context's processors against one set of generated files
+      TestGenerationContext generation = new TestGenerationContext();
+
+      contribution(loader).applyTo(generation, mock(BeanFactoryInitializationCode.class));
+      contribution(loader).applyTo(generation, mock(BeanFactoryInitializationCode.class));
+
+      assertThat(RuntimeHintsPredicates.resource().forResource(ResolvedMigrations.LOCATION))
+          .accepts(generation.getRuntimeHints());
+    }
+  }
+
+  @Test
   void cycleFailsTheBuild() throws IOException {
     library("a", "name=a\nchangelog=classpath:libs/a/changelog.xml\nafter=b\n", "libs/a");
     library("b", "name=b\nchangelog=classpath:libs/b/changelog.xml\nafter=a\n", "libs/b");

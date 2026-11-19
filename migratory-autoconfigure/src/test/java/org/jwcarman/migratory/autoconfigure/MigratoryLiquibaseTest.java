@@ -19,6 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -31,8 +34,10 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.jwcarman.migratory.core.Migration;
 import org.jwcarman.migratory.core.MigrationDeclarations;
+import org.jwcarman.migratory.core.MigratoryException;
 import org.springframework.boot.LazyInitializationBeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
@@ -193,6 +198,59 @@ class MigratoryLiquibaseTest {
         .run(
             context ->
                 assertThat(context).hasNotFailed().doesNotHaveBean(MigratoryLiquibase.class));
+  }
+
+  @Test
+  void runsWithSpringLiquibaseUrlAndNoDataSourceBean() throws SQLException {
+    String other = MigratoryTestPostgres.newDatabaseUrl();
+    new ApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                LiquibaseAutoConfiguration.class, MigratoryAutoConfiguration.class))
+        .withPropertyValues(
+            "spring.liquibase.url=" + other,
+            "spring.liquibase.user=" + MigratoryTestPostgres.username(),
+            "spring.liquibase.password=" + MigratoryTestPostgres.password())
+        .run(context -> assertThat(context).hasNotFailed().hasSingleBean(MigratoryLiquibase.class));
+    assertThat(tablesAt(other)).contains("inventory_item", "order_line", "app_note");
+  }
+
+  @Test
+  void disabledIgnoresBrokenDeclarations(@TempDir Path library) throws IOException {
+    Path declaration = library.resolve("META-INF/migratory.properties");
+    Files.createDirectories(declaration.getParent());
+    Files.writeString(declaration, "name=broken\nchangelog=classpath:no/such/changelog.xml\n");
+    try (URLClassLoader loader =
+        new URLClassLoader(new URL[] {library.toUri().toURL()}, getClass().getClassLoader())) {
+      runner
+          .withClassLoader(loader)
+          .withPropertyValues(
+              "migratory.enabled=false", "spring.liquibase.change-log=" + EMPTY_CHANGELOG)
+          .run(context -> assertThat(context).hasNotFailed());
+    }
+  }
+
+  @Test
+  void dropFirstFailsStartup() {
+    runner
+        .withPropertyValues("spring.liquibase.drop-first=true")
+        .run(
+            context ->
+                assertThat(context)
+                    .getFailure()
+                    .rootCause()
+                    .isInstanceOf(MigratoryException.class)
+                    .hasMessageContaining("spring.liquibase.drop-first"));
+  }
+
+  @Test
+  void dropFirstWithMigratoryDisabledStarts() {
+    runner
+        .withPropertyValues(
+            "spring.liquibase.drop-first=true",
+            "migratory.enabled=false",
+            "spring.liquibase.change-log=" + EMPTY_CHANGELOG)
+        .run(context -> assertThat(context).hasNotFailed());
   }
 
   @Test

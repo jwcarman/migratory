@@ -17,6 +17,7 @@ package org.jwcarman.migratory.autoconfigure;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -30,8 +31,10 @@ import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseConnectionDetails;
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseDataSource;
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties;
@@ -75,7 +78,7 @@ public class MigratoryAutoConfiguration {
         "liquibase.integration.spring.SpringLiquibase",
         "org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties"
       })
-  @ConditionalOnBean(DataSource.class)
+  @Conditional(MigrationDatabaseCondition.class)
   @EnableConfigurationProperties(LiquibaseProperties.class)
   @Import(DatabaseInitializationDependencyConfigurer.class)
   static class LiquibaseMigrationsConfiguration {
@@ -91,8 +94,10 @@ public class MigratoryAutoConfiguration {
         LiquibaseProperties liquibase,
         MigratoryProperties properties,
         ResourceLoader resourceLoader) {
+      // with migratory off, the declarations are not even read: a broken one in a third-party jar
+      // must not stop an application that includes the changelogs itself
       return new MigratoryLiquibase(
-          Migrations.load(resourceLoader.getClassLoader()),
+          properties.isEnabled() ? Migrations.load(resourceLoader.getClassLoader()) : List.of(),
           migrationDataSource(
               liquibaseDataSource.getIfAvailable(),
               dataSource,
@@ -120,7 +125,12 @@ public class MigratoryAutoConfiguration {
         applyConnectionDetails(connectionDetails, builder);
         return builder.build();
       }
-      DataSource primary = dataSource.getObject();
+      DataSource primary = dataSource.getIfUnique();
+      if (primary == null) {
+        throw new MigratoryException(
+            "migratory found no single DataSource to migrate: mark one @Primary or"
+                + " @LiquibaseDataSource, or set spring.liquibase.url");
+      }
       if (connectionDetails.getUsername() != null) {
         DataSourceBuilder<?> builder =
             DataSourceBuilder.derivedFrom(primary).type(SimpleDriverDataSource.class);
@@ -166,6 +176,26 @@ public class MigratoryAutoConfiguration {
               + ") but Liquibase is not on the classpath: add spring-boot-starter-liquibase, or"
               + " set migratory.enabled=false and include their changelogs yourself.");
     }
+  }
+
+  /**
+   * Matches when there is a database to migrate, as Spring Boot's Liquibase decides: a {@code
+   * DataSource}, JDBC connection details, or {@code spring.liquibase.url}.
+   */
+  static final class MigrationDatabaseCondition extends AnyNestedCondition {
+
+    MigrationDatabaseCondition() {
+      super(ConfigurationPhase.REGISTER_BEAN);
+    }
+
+    @ConditionalOnBean(DataSource.class)
+    static class DataSourceBean {}
+
+    @ConditionalOnBean(JdbcConnectionDetails.class)
+    static class JdbcConnectionDetailsBean {}
+
+    @ConditionalOnProperty("spring.liquibase.url")
+    static class LiquibaseUrl {}
   }
 
   /** Matches when Liquibase, or Spring Boot's support for it, is missing. */
