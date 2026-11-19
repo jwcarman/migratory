@@ -18,19 +18,17 @@ package org.jwcarman.migratory.core;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -61,7 +59,7 @@ public final class MigrationDeclarations {
    *     declare the same name
    */
   public static List<Migration> discover(ClassLoader classLoader) {
-    Map<String, Migration> byName = new HashMap<>();
+    Map<String, Migration> byName = new TreeMap<>();
     for (URL url : urls(classLoader)) {
       String source = url.toString();
       Migration migration = parse(load(url), source);
@@ -79,9 +77,7 @@ public final class MigrationDeclarations {
                 + source);
       }
     }
-    List<Migration> migrations = new ArrayList<>(byName.values());
-    migrations.sort(Comparator.comparing(Migration::name));
-    return List.copyOf(migrations);
+    return List.copyOf(byName.values());
   }
 
   private static Collection<URL> urls(ClassLoader classLoader) {

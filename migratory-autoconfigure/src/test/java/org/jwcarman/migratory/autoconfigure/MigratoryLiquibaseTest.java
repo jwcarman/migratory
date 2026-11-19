@@ -35,6 +35,7 @@ import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.jwcarman.migratory.autoconfigure.MigratoryAutoConfiguration.LiquibaseRequiredConfiguration.LiquibaseNotRequired;
 import org.jwcarman.migratory.core.Migration;
 import org.jwcarman.migratory.core.MigrationDeclarations;
 import org.jwcarman.migratory.core.MigratoryException;
@@ -400,7 +401,12 @@ class MigratoryLiquibaseTest {
     runner
         .withClassLoader(new FilteredClassLoader(SpringLiquibase.class))
         .withPropertyValues("migratory.enabled=false")
-        .run(context -> assertThat(context).hasNotFailed().doesNotHaveBean(String.class));
+        .run(
+            context -> {
+              assertThat(context).hasNotFailed().doesNotHaveBean(String.class);
+              assertThat(context.getBean(LiquibaseNotRequired.class).reason())
+                  .isEqualTo("migratory.enabled is false");
+            });
   }
 
   @Test
@@ -547,6 +553,21 @@ class MigratoryLiquibaseTest {
                       dataSource -> assertThat(dataSource.getUrl()).isEqualTo(other));
             });
     assertThat(tablesAt(other)).contains("inventory_item", "order_line");
+  }
+
+  @Test
+  void usesSpringLiquibaseDriverClassNameWhenBootsLiquibaseStandsDown() {
+    runner
+        .withPropertyValues(
+            "spring.liquibase.enabled=false",
+            "spring.liquibase.url=" + MigratoryTestPostgres.newDatabaseUrl(),
+            "spring.liquibase.driver-class-name=com.example.NoSuchDriver")
+        .run(
+            context ->
+                assertThat(context)
+                    .getFailure()
+                    .rootCause()
+                    .hasMessageContaining("com.example.NoSuchDriver"));
   }
 
   @Test

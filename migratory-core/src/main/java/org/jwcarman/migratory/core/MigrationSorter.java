@@ -84,9 +84,8 @@ public final class MigrationSorter {
       }
     }
     if (order.size() < byName.size()) {
+      // name only what can reach itself: whatever ran, or only waits on a cycle, cannot
       TreeSet<String> stuck = new TreeSet<>(byName.keySet());
-      order.forEach(migration -> stuck.remove(migration.name()));
-      // what only waits on a cycle is stuck too: name only what can reach itself
       stuck.removeIf(name -> !reachesItself(name, next));
       throw new MigratoryException(
           "Migrations "

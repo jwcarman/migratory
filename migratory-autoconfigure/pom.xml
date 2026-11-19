@@ -114,4 +114,25 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- PIT runs the tests itself and does not read surefire's configuration, so it gets the
+             second test library too -->
+        <profile>
+            <id>pit</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-maven</artifactId>
+                        <configuration>
+                            <additionalClasspathElements>
+                                <additionalClasspathElement>${project.basedir}/src/test/libs/orders</additionalClasspathElement>
+                            </additionalClasspathElements>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

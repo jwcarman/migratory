@@ -41,6 +41,14 @@ class DeclarationsPresentConditionTest {
   }
 
   @Test
+  void doesNotMatchWithoutADeclaration() {
+    ClassLoader none =
+        new MigratoryLiquibaseTest.NoDeclarationsClassLoader(getClass().getClassLoader());
+
+    assertThat(condition.matches(context(none), metadata())).isFalse();
+  }
+
+  @Test
   void doesNotMatchWithoutAClassLoader() {
     assertThat(condition.matches(context(null), metadata())).isFalse();
   }
