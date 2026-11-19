@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -44,6 +45,19 @@ public final class ResolvedMigrations {
    * @return the file's contents
    */
   public static String write(List<Migration> sorted) {
+    StringWriter writer = new StringWriter();
+    write(sorted, writer);
+    return writer.toString();
+  }
+
+  /**
+   * Writes sorted migrations to a writer.
+   *
+   * @param sorted the migrations in the order they run
+   * @param writer where the file's contents go
+   * @throws UncheckedIOException when the writer fails
+   */
+  static void write(List<Migration> sorted, Writer writer) {
     Properties properties = new Properties();
     properties.setProperty(COUNT, Integer.toString(sorted.size()));
     for (int i = 0; i < sorted.size(); i++) {
@@ -52,13 +66,11 @@ public final class ResolvedMigrations {
       properties.setProperty(i + ".changelog", migration.changelog());
       properties.setProperty(i + ".source", migration.source());
     }
-    StringWriter writer = new StringWriter();
     try {
       properties.store(writer, "Written by migratory at build time; the order the migrations run");
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-    return writer.toString();
   }
 
   /**

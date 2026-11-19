@@ -20,6 +20,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
@@ -99,5 +102,31 @@ class ResolvedMigrationsTest {
   @Test
   void emptyRoundTrips() {
     assertThat(roundTrip(List.of())).isEmpty();
+  }
+
+  @Test
+  void aWriterThatFailsIsAnUncheckedIOException() {
+    Writer failing =
+        new Writer() {
+          @Override
+          public void write(char[] buffer, int offset, int length) throws IOException {
+            throw new IOException("disk full");
+          }
+
+          @Override
+          public void flush() {
+            // nothing buffered
+          }
+
+          @Override
+          public void close() {
+            // nothing to release
+          }
+        };
+    List<Migration> none = List.of();
+
+    assertThatThrownBy(() -> ResolvedMigrations.write(none, failing))
+        .isInstanceOf(UncheckedIOException.class)
+        .hasRootCauseMessage("disk full");
   }
 }
