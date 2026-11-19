@@ -15,10 +15,9 @@ so it sees every declaring library the image will contain. There migratory:
 So a library keeps its included changelogs and SQL files under its declared changelog's directory.
 
 migratory also puts Liquibase's XML schemas in the image, and builds it with
-`--enable-url-protocols=https`: the JDK's XML parser turns the schema location a changelog names
-(`https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd` in Liquibase's own
-templates) into a `java.net.URL`, which a native image refuses for a protocol it was not built
-with. Liquibase still reads the schema from its jar, never from the network.
+`--enable-url-protocols=http,https`: the JDK's XML parser turns the schema location a changelog
+names (`https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd`, or the same over
+http) into a `java.net.URL`, which a native image refuses for a protocol it was not built with. Liquibase still reads the schema from its jar, never from the network.
 
 The image runs exactly the migrations that were on the class path when it was built.
 `migratory.enabled` is read when the migrations would run, not decided at build time, so

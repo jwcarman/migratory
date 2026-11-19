@@ -19,39 +19,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import org.junit.jupiter.api.Test;
-import org.jwcarman.migratory.core.Migration;
-import org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties;
-import org.springframework.core.io.DefaultResourceLoader;
 
 /**
  * A native image builds {@code java.net.URL}s for the schema a changelog names, and refuses a
- * protocol it was not built with: these keep both the generated root and libraries' changelogs
- * parseable there.
+ * protocol it was not built with: changelogs name it over http or https, so both are enabled.
  */
 class NativeSchemaLocationTest {
 
   @Test
-  void rootChangelogNamesTheSchemaOverHttp() {
-    MigratoryLiquibase runner =
-        new MigratoryLiquibase(
-            List.of(new Migration("a", "classpath:a/changelog.xml", Set.of(), Set.of(), "test")),
-            null,
-            new LiquibaseProperties(),
-            new MigratoryProperties(),
-            new DefaultResourceLoader());
-
-    assertThat(runner.rootChangelog())
-        .contains("http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd")
-        .doesNotContain("https://");
-  }
-
-  @Test
-  void nativeImagesAcceptHttpsSchemaLocations() throws IOException {
+  void nativeImagesAcceptHttpAndHttpsSchemaLocations() throws IOException {
     Properties properties = new Properties();
     try (InputStream in =
         getClass()
@@ -62,6 +41,6 @@ class NativeSchemaLocationTest {
       properties.load(in);
     }
 
-    assertThat(properties.getProperty("Args")).contains("--enable-url-protocols=https");
+    assertThat(properties.getProperty("Args")).contains("--enable-url-protocols=http,https");
   }
 }
