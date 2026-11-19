@@ -48,6 +48,14 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Liquibase locks with a PostgreSQL advisory lock instead of a DATABASECHANGELOGLOCK row, so a
+             crashed instance never leaves the lock held; it applies to migratory's run too. -->
+        <dependency>
+            <groupId>com.github.blagerweij</groupId>
+            <artifactId>liquibase-sessionlock</artifactId>
+            <version>1.6.9</version>
+            <scope>runtime</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

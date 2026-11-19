@@ -17,6 +17,10 @@ package org.jwcarman.migratory.examples.app;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.sql.Connection;
+
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,6 +29,11 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.lockservice.LockServiceFactory;
 
 @SpringBootTest
 @Testcontainers
@@ -35,6 +44,8 @@ class ExampleApplicationTest {
 
   @Autowired private JdbcClient jdbc;
 
+  @Autowired private DataSource dataSource;
+
   @Test
   void librariesMigrateInOrderBeforeTheApplication() {
     assertThat(
@@ -42,5 +53,19 @@ class ExampleApplicationTest {
                 .query(String.class)
                 .list())
         .containsExactly("inventory-1", "orders-1", "app-1");
+  }
+
+  @Test
+  void liquibaseLocksWithAPostgresSessionLock() throws Exception {
+    try (Connection connection = dataSource.getConnection()) {
+      Database database =
+          DatabaseFactory.getInstance()
+              .findCorrectDatabaseImplementation(new JdbcConnection(connection));
+
+      // liquibase-sessionlock replaces the DATABASECHANGELOGLOCK row with a PostgreSQL advisory
+      // lock, which the database releases when a crashed instance's session ends
+      assertThat(LockServiceFactory.getInstance().getLockService(database).getClass().getName())
+          .isEqualTo("com.github.blagerweij.sessionlock.PGLockService");
+    }
   }
 }
