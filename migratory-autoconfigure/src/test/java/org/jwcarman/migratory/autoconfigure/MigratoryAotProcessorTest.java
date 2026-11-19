@@ -136,6 +136,22 @@ class MigratoryAotProcessorTest {
   }
 
   @Test
+  void noClassLoaderNoContribution() {
+    // getBeanClassLoader is nullable; with no loader there is no class path to search
+    DefaultListableBeanFactory beanFactory =
+        new DefaultListableBeanFactory() {
+          @Override
+          public ClassLoader getBeanClassLoader() {
+            return null;
+          }
+        };
+    beanFactory.registerBeanDefinition(
+        "migratoryLiquibase", new RootBeanDefinition(MigratoryLiquibase.class));
+
+    assertThat(processor.processAheadOfTime(beanFactory)).isNull();
+  }
+
+  @Test
   void readsResolvedListInAotMode() throws IOException {
     Path root = Files.createDirectories(temp.resolve("resolved"));
     Path file = root.resolve(ResolvedMigrations.LOCATION);
