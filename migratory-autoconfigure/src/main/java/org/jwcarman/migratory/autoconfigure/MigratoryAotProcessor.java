@@ -15,7 +15,6 @@
  */
 package org.jwcarman.migratory.autoconfigure;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.jwcarman.migratory.core.Migration;
@@ -68,9 +67,7 @@ public final class MigratoryAotProcessor implements BeanFactoryInitializationAot
               ResolvedMigrations.LOCATION,
               file -> {
                 if (!file.exists()) {
-                  file.create(
-                      new ByteArrayResource(
-                          ResolvedMigrations.write(sorted).getBytes(StandardCharsets.UTF_8)));
+                  file.create(new ByteArrayResource(ResolvedMigrations.write(sorted)));
                 }
               });
       ResourceHints resources = generationContext.getRuntimeHints().resources();

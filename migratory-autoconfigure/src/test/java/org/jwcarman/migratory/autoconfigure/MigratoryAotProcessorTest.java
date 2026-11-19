@@ -156,13 +156,12 @@ class MigratoryAotProcessorTest {
     Path root = Files.createDirectories(temp.resolve("resolved"));
     Path file = root.resolve(ResolvedMigrations.LOCATION);
     Files.createDirectories(file.getParent());
-    Files.writeString(
+    Files.write(
         file,
         ResolvedMigrations.write(
             List.of(
                 new Migration(
-                    "baked", "classpath:libs/baked/changelog.xml", Set.of(), Set.of(), "build"))),
-        StandardCharsets.ISO_8859_1);
+                    "baked", "classpath:libs/baked/changelog.xml", Set.of(), Set.of(), "build"))));
     try (URLClassLoader loader = new URLClassLoader(new URL[] {root.toUri().toURL()}, null)) {
       assertThat(Migrations.load(loader)).isEmpty();
       System.setProperty("spring.aot.enabled", "true");

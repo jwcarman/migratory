@@ -15,11 +15,11 @@
  */
 package org.jwcarman.migratory.core;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -39,25 +39,27 @@ public final class ResolvedMigrations {
   private ResolvedMigrations() {}
 
   /**
-   * Writes sorted migrations.
+   * Writes sorted migrations as the bytes of the file {@link #read(InputStream)} reads: the
+   * properties format's ISO-8859-1, with every other character escaped, so the file is read back
+   * exactly whatever characters a changelog's path or a declaration's location holds.
    *
    * @param sorted the migrations in the order they run
-   * @return the file's contents
+   * @return the file's bytes
    */
-  public static String write(List<Migration> sorted) {
-    StringWriter writer = new StringWriter();
-    write(sorted, writer);
-    return writer.toString();
+  public static byte[] write(List<Migration> sorted) {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    write(sorted, out);
+    return out.toByteArray();
   }
 
   /**
-   * Writes sorted migrations to a writer.
+   * Writes sorted migrations to a stream.
    *
    * @param sorted the migrations in the order they run
-   * @param writer where the file's contents go
-   * @throws UncheckedIOException when the writer fails
+   * @param out where the file's bytes go
+   * @throws UncheckedIOException when the stream fails
    */
-  static void write(List<Migration> sorted, Writer writer) {
+  static void write(List<Migration> sorted, OutputStream out) {
     Properties properties = new Properties();
     properties.setProperty(COUNT, Integer.toString(sorted.size()));
     for (int i = 0; i < sorted.size(); i++) {
@@ -67,7 +69,7 @@ public final class ResolvedMigrations {
       properties.setProperty(i + ".source", migration.source());
     }
     try {
-      properties.store(writer, "Written by migratory at build time; the order the migrations run");
+      properties.store(out, "Written by migratory at build time; the order the migrations run");
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

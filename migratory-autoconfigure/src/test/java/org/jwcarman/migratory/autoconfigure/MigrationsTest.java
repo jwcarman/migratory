@@ -56,7 +56,7 @@ class MigrationsTest {
     // the baked order is the reverse of discovery's, so only reading the list can produce it
     List<Migration> reversed = Migrations.load(getClass().getClassLoader()).reversed();
     Path baked = directory.resolve("resolved-migrations.properties");
-    Files.writeString(baked, ResolvedMigrations.write(reversed));
+    Files.write(baked, ResolvedMigrations.write(reversed));
     SpringProperties.setProperty(AotDetector.AOT_ENABLED, "true");
 
     assertThat(Migrations.load(serving(baked.toUri().toURL())))

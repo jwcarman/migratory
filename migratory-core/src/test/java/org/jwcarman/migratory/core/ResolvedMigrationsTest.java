@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.tuple;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
@@ -32,9 +32,7 @@ import org.junit.jupiter.api.Test;
 class ResolvedMigrationsTest {
 
   private static List<Migration> roundTrip(List<Migration> migrations) {
-    String text = ResolvedMigrations.write(migrations);
-    return ResolvedMigrations.read(
-        new ByteArrayInputStream(text.getBytes(StandardCharsets.ISO_8859_1)));
+    return ResolvedMigrations.read(new ByteArrayInputStream(ResolvedMigrations.write(migrations)));
   }
 
   @Test
@@ -100,27 +98,34 @@ class ResolvedMigrationsTest {
   }
 
   @Test
+  void nonAsciiSurvivesTheBuild() {
+    Migration migration =
+        new Migration(
+            "orders",
+            "classpath:com/exämple/db/changelog.xml",
+            Set.of(),
+            Set.of(),
+            "jar:file:/home/josé/libs/orders.jar!/META-INF/migratory.properties");
+
+    byte[] file = ResolvedMigrations.write(List.of(migration));
+
+    assertThat(ResolvedMigrations.read(new ByteArrayInputStream(file)))
+        .extracting(Migration::changelog, Migration::source)
+        .containsExactly(tuple(migration.changelog(), migration.source()));
+  }
+
+  @Test
   void emptyRoundTrips() {
     assertThat(roundTrip(List.of())).isEmpty();
   }
 
   @Test
-  void aWriterThatFailsIsAnUncheckedIOException() {
-    Writer failing =
-        new Writer() {
+  void aStreamThatFailsIsAnUncheckedIOException() {
+    OutputStream failing =
+        new OutputStream() {
           @Override
-          public void write(char[] buffer, int offset, int length) throws IOException {
+          public void write(int b) throws IOException {
             throw new IOException("disk full");
-          }
-
-          @Override
-          public void flush() {
-            // nothing buffered
-          }
-
-          @Override
-          public void close() {
-            // nothing to release
           }
         };
     List<Migration> none = List.of();
