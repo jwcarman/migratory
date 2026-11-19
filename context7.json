@@ -1,6 +1,7 @@
 {
   "$schema": "https://context7.com/schema/context7.json",
   "url": "https://context7.com/jwcarman/migratory",
+  "public_key": "pk_teuqTJ1f9Z3tSlPtgF1K9",
   "projectTitle": "migratory (Liquibase migrations for Spring Boot libraries)",
   "description": "migratory (org.jwcarman.migratory) discovers the Liquibase changelogs Spring Boot libraries declare in META-INF/migratory.properties and runs them in dependency order (after/before) before the application's own Liquibase, on the JVM and in GraalVM native images.",
   "folders": [
