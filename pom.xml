@@ -44,7 +44,10 @@
 
         <!-- Dependency Versions -->
         <jazzer.version>0.30.0</jazzer.version>
-        <spring-boot.version>4.1.2</spring-boot.version>
+        <!-- The oldest Spring Boot migratory supports: it is built and released against this, so an
+             application on any 4.1 or later gets nothing newer than it has. The spring-boot-latest
+             profile tests the newest. -->
+        <spring-boot.version>4.1.3</spring-boot.version>
 
         <!-- Plugin Versions -->
         <compiler.plugin.version>3.16.0</compiler.plugin.version>
@@ -284,6 +287,14 @@
             <modules>
                 <module>migratory-native-tests</module>
             </modules>
+        </profile>
+        <profile>
+            <!-- The newest Spring Boot release: CI's spring-boot-latest job builds and tests with it, so
+                 "4.1 and later" stays true. Raise it by hand with each Spring Boot minor release. -->
+            <id>spring-boot-latest</id>
+            <properties>
+                <spring-boot.version>4.2.0</spring-boot.version>
+            </properties>
         </profile>
         <profile>
             <id>ci</id>

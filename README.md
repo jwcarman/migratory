@@ -34,7 +34,7 @@ application lists nothing, and no library lists the optional pieces that might n
 ## Requirements
 
 - Java 25+
-- Spring Boot 4.1+ (built against 4.1.2), with Liquibase
+- Spring Boot 4.1 or later (built against 4.1.3, tested on 4.2.0), with Liquibase
 
 ## Declaring a migration (in a library)
 

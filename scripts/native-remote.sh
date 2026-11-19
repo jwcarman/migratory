@@ -12,6 +12,7 @@
 #   NATIVE_HOST       required: the ssh host to build on
 #   NATIVE_JAVA_HOME  the GraalVM (or Liberica NIK) home on the host; default: the host's JAVA_HOME
 #   NATIVE_DIR        the working copy on the host; default: ~/migratory-native
+#   NATIVE_MAVEN_ARGS extra Maven arguments, such as -Pspring-boot-latest; default: none
 #
 # The host needs git, Docker (the tests start PostgreSQL), gcc and zlib headers. Logs stay on the
 # host as $NATIVE_DIR/<app>.log. Exits non-zero when any app fails.
@@ -21,6 +22,7 @@ set -euo pipefail
 : "${NATIVE_HOST:?set NATIVE_HOST to the ssh host to build on}"
 NATIVE_DIR="${NATIVE_DIR:-~/migratory-native}"
 NATIVE_JAVA_HOME="${NATIVE_JAVA_HOME:-}"
+NATIVE_MAVEN_ARGS="${NATIVE_MAVEN_ARGS:-}"
 
 cd "$(git rev-parse --show-toplevel)"
 
@@ -50,9 +52,9 @@ echo "building $(git rev-parse --short HEAD) on the build host: ${apps[*]}"
 
 # The remote script takes its settings as arguments, so nothing local is expanded inside it.
 ssh -o ServerAliveInterval=60 "$NATIVE_HOST" bash -s -- \
-  "$NATIVE_DIR" "$NATIVE_JAVA_HOME" "${apps[@]}" <<'REMOTE'
+  "$NATIVE_DIR" "$NATIVE_JAVA_HOME" "$NATIVE_MAVEN_ARGS" "${apps[@]}" <<'REMOTE'
 set -uo pipefail
-dir="${1/#\~/$HOME}"; java_home="$2"; shift 2
+dir="${1/#\~/$HOME}"; java_home="$2"; read -r -a maven_args <<<"$3"; shift 3
 if [[ -n "$java_home" ]]; then
   export JAVA_HOME="$java_home"
   export PATH="$JAVA_HOME/bin:$PATH"
@@ -72,7 +74,7 @@ failed=0
 # would swallow the rest of it, the final exit status among it.
 for app in "$@"; do
   start=$SECONDS
-  if ./mvnw -B -Pnative-tests -Dnative verify -pl "migratory-native-tests/$app" -am \
+  if ./mvnw -B "${maven_args[@]}" -Pnative-tests -Dnative verify -pl "migratory-native-tests/$app" -am \
       -Dtest=none -Dsurefire.failIfNoSpecifiedTests=false < /dev/null > "$app.log" 2>&1; then
     result=passed
   else

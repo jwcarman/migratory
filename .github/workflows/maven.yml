@@ -70,3 +70,20 @@ jobs:
           echo "::notice::SONAR_TOKEN is not set; building without the SonarCloud analysis"
           mvn -Pci -B verify
         fi
+
+  # migratory is built against the oldest Spring Boot it supports (spring-boot.version); this runs
+  # the same build and tests on the newest release (the spring-boot-latest profile).
+  spring-boot-latest:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Set up JDK 25
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+      with:
+        java-version: '25'
+        distribution: 'liberica'
+        cache: maven
+    - name: Build and test on the newest Spring Boot
+      run: mvn -B -Pspring-boot-latest verify

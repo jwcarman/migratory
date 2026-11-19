@@ -17,6 +17,12 @@ updates:
     reviewers:
       - "jwcarman"
     ignore:
+      # spring-boot.version is the oldest Spring Boot migratory supports, so it takes 4.1 patch
+      # releases only; the spring-boot-latest profile, raised by hand, tests the newest.
+      - dependency-name: "org.springframework.boot:*"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
       # Must match the OpenTelemetry version Spring Boot manages; moved by hand with Spring Boot.
       # The observability example's OpenTelemetryLogsTest fails when the two disagree.
       - dependency-name: "io.opentelemetry.instrumentation:*"
