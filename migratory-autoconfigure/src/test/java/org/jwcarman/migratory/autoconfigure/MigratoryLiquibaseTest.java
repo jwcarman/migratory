@@ -432,21 +432,22 @@ class MigratoryLiquibaseTest {
                     .hasMessageContaining("no single DataSource"));
   }
 
+  // only the bean's presence matters: nothing connects with these
   private static JdbcConnectionDetails connectionDetails() {
     return new JdbcConnectionDetails() {
       @Override
       public String getUsername() {
-        return MigratoryTestPostgres.username();
+        return "unused";
       }
 
       @Override
       public String getPassword() {
-        return MigratoryTestPostgres.password();
+        return "unused";
       }
 
       @Override
       public String getJdbcUrl() {
-        return MigratoryTestPostgres.newDatabaseUrl();
+        return "jdbc:postgresql://localhost/unused";
       }
     };
   }
