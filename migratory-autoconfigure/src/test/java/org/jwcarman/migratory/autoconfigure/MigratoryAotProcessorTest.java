@@ -87,6 +87,22 @@ class MigratoryAotProcessorTest {
   }
 
   @Test
+  void registersLiquibaseSchemas() throws IOException {
+    try (URLClassLoader loader = twoLibraries()) {
+      TestGenerationContext generation = new TestGenerationContext();
+
+      contribution(loader).applyTo(generation, mock(BeanFactoryInitializationCode.class));
+
+      // the generated root changelog, and most changelogs, name this schema; without it in the
+      // image Liquibase tries to download it, which a native image refuses for https
+      assertThat(
+              RuntimeHintsPredicates.resource()
+                  .forResource("www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd"))
+          .accepts(generation.getRuntimeHints());
+    }
+  }
+
+  @Test
   void cycleFailsTheBuild() throws IOException {
     library("a", "name=a\nchangelog=classpath:libs/a/changelog.xml\nafter=b\n", "libs/a");
     library("b", "name=b\nchangelog=classpath:libs/b/changelog.xml\nafter=a\n", "libs/b");

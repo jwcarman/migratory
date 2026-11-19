@@ -68,10 +68,12 @@ git checkout --quiet --force --detach FETCH_HEAD
 # would otherwise end up in the image
 git clean -fdxq -e '*.log'
 failed=0
+# Maven gets /dev/null as its input: this script arrives on stdin, and a command reading stdin
+# would swallow the rest of it, the final exit status among it.
 for app in "$@"; do
   start=$SECONDS
   if ./mvnw -B -Pnative-tests -Dnative verify -pl "migratory-native-tests/$app" -am \
-      -Dtest=none -Dsurefire.failIfNoSpecifiedTests=false > "$app.log" 2>&1; then
+      -Dtest=none -Dsurefire.failIfNoSpecifiedTests=false < /dev/null > "$app.log" 2>&1; then
     result=passed
   else
     result=FAILED
