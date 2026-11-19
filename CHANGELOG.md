@@ -6,6 +6,8 @@ All notable changes to migratory are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-19
+
 ### Added
 
 - First release: libraries declare a Liquibase changelog in `META-INF/migratory.properties`, and
@@ -17,3 +19,6 @@ All notable changes to migratory are documented here. The format follows
 ### Requirements
 
 - Spring Boot 4.1 or later: built against 4.1.3, and CI also builds and tests on 4.2.0.
+
+[Unreleased]: https://github.com/jwcarman/migratory/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/jwcarman/migratory/releases/tag/0.1.0
