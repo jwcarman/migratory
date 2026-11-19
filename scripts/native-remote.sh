@@ -66,7 +66,7 @@ git fetch --quiet ~/migratory-native.bundle HEAD
 git checkout --quiet --force --detach FETCH_HEAD
 # a fresh tree each run: build output left from another commit (a deleted aot.factories, say)
 # would otherwise end up in the image
-git clean -fdxq -e '*.log'
+git clean -fdxq -e '/*.log'
 failed=0
 # Maven gets /dev/null as its input: this script arrives on stdin, and a command reading stdin
 # would swallow the rest of it, the final exit status among it.
