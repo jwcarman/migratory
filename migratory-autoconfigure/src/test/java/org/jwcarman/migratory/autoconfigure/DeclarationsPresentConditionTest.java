@@ -55,7 +55,10 @@ class DeclarationsPresentConditionTest {
           }
         };
 
-    assertThatThrownBy(() -> condition.matches(context(broken), metadata()))
+    ConditionContext context = context(broken);
+    AnnotatedTypeMetadata metadata = metadata();
+
+    assertThatThrownBy(() -> condition.matches(context, metadata))
         .isInstanceOf(UncheckedIOException.class)
         .hasMessageContaining("cannot search");
   }

@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -50,20 +52,35 @@ class MigrationsTest {
   }
 
   @Test
+  void onGeneratedArtifactsReadsTheBakedList(@TempDir Path directory) throws IOException {
+    // the baked order is the reverse of discovery's, so only reading the list can produce it
+    List<Migration> reversed = Migrations.load(getClass().getClassLoader()).reversed();
+    Path baked = directory.resolve("resolved-migrations.properties");
+    Files.writeString(baked, ResolvedMigrations.write(reversed));
+    SpringProperties.setProperty(AotDetector.AOT_ENABLED, "true");
+
+    assertThat(Migrations.load(serving(baked.toUri().toURL())))
+        .extracting(Migration::name)
+        .containsExactly("orders", "inventory");
+  }
+
+  @Test
   void anUnreadableBakedListFailsNamingIt(@TempDir Path directory) {
     SpringProperties.setProperty(AotDetector.AOT_ENABLED, "true");
-    URL missing = toUrl(directory.resolve("gone.properties").toUri());
-    ClassLoader loader =
-        new ClassLoader(getClass().getClassLoader()) {
-          @Override
-          public URL getResource(String name) {
-            return ResolvedMigrations.LOCATION.equals(name) ? missing : super.getResource(name);
-          }
-        };
+    ClassLoader loader = serving(toUrl(directory.resolve("gone.properties").toUri()));
 
     assertThatThrownBy(() -> Migrations.load(loader))
         .isInstanceOf(UncheckedIOException.class)
         .hasMessageContaining("gone.properties");
+  }
+
+  private ClassLoader serving(URL bakedList) {
+    return new ClassLoader(getClass().getClassLoader()) {
+      @Override
+      public URL getResource(String name) {
+        return ResolvedMigrations.LOCATION.equals(name) ? bakedList : super.getResource(name);
+      }
+    };
   }
 
   private static URL toUrl(URI uri) {

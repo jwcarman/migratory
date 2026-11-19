@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.core.Ordered;
 
@@ -26,11 +27,26 @@ import org.springframework.core.Ordered;
 class MigratoryDatabaseInitializerDetectorTest {
 
   @Test
+  void findsTheRunnerWhenLiquibaseIsPresent() {
+    assertThat(
+            new MigratoryDatabaseInitializerDetector(getClass().getClassLoader())
+                .detect(withRunner()))
+        .hasSize(1);
+  }
+
+  @Test
   void findsNothingWhenLiquibaseIsMissing() {
     assertThat(
             new MigratoryDatabaseInitializerDetector(new FilteredClassLoader("liquibase."))
-                .detect(new DefaultListableBeanFactory()))
+                .detect(withRunner()))
         .isEmpty();
+  }
+
+  private static DefaultListableBeanFactory withRunner() {
+    DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+    beanFactory.registerBeanDefinition(
+        "migratoryLiquibase", new RootBeanDefinition(MigratoryLiquibase.class));
+    return beanFactory;
   }
 
   @Test

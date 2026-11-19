@@ -63,7 +63,9 @@ class RootChangelogResourceLoaderTest {
         new RootChangelogResourceLoader(new DefaultResourceLoader(), ROOT)
             .getResource(RootChangelogResourceLoader.ROOT_LOCATION);
 
-    assertThat(root).isEqualTo(root).isNotEqualTo(other).hasSameHashCodeAs(root);
+    assertThat(loader.getResource(RootChangelogResourceLoader.ROOT_LOCATION)).isEqualTo(root);
+    assertThat(root).isNotEqualTo(other);
+    assertThat(root.hashCode()).isEqualTo(System.identityHashCode(root));
   }
 
   @Test

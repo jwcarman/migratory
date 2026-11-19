@@ -215,7 +215,7 @@ class MigratoryLiquibaseTest {
   }
 
   @Test
-  void runsWithSpringLiquibaseUrlAndNoDataSourceBean() throws SQLException {
+  void runsWithSpringLiquibaseUrlAndNoDataSourceBean() {
     String other = MigratoryTestPostgres.newDatabaseUrl();
     new ApplicationContextRunner()
         .withConfiguration(
@@ -268,7 +268,7 @@ class MigratoryLiquibaseTest {
   }
 
   @Test
-  void usesSpringLiquibaseUrlWhenSet() throws SQLException {
+  void usesSpringLiquibaseUrlWhenSet() {
     String other = MigratoryTestPostgres.newDatabaseUrl();
     runner
         .withPropertyValues(
@@ -288,7 +288,7 @@ class MigratoryLiquibaseTest {
   }
 
   @Test
-  void usesTheLiquibaseDataSourceWhenThereIsOne() throws SQLException {
+  void usesTheLiquibaseDataSourceWhenThereIsOne() {
     String other = MigratoryTestPostgres.newDatabaseUrl();
     runner
         .withUserConfiguration(OwnLiquibaseDataSource.class)
@@ -538,7 +538,14 @@ class MigratoryLiquibaseTest {
             "spring.liquibase.user=" + MigratoryTestPostgres.username(),
             "spring.liquibase.password=" + MigratoryTestPostgres.password(),
             "spring.liquibase.driver-class-name=org.postgresql.Driver")
-        .run(context -> assertThat(context).hasNotFailed());
+        .run(
+            context -> {
+              assertThat(context).hasNotFailed();
+              assertThat(context.getBean(MigratoryLiquibase.class).getDataSource())
+                  .isInstanceOfSatisfying(
+                      SimpleDriverDataSource.class,
+                      dataSource -> assertThat(dataSource.getUrl()).isEqualTo(other));
+            });
     assertThat(tablesAt(other)).contains("inventory_item", "order_line");
   }
 
